@@ -1,3 +1,0 @@
-/home/brice/Documents/Projets-perso/C++/Visual/cmake-build-debug/CMakeFiles/Visual.dir
-/home/brice/Documents/Projets-perso/C++/Visual/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/brice/Documents/Projets-perso/C++/Visual/cmake-build-debug/CMakeFiles/rebuild_cache.dir
