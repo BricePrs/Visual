@@ -43,10 +43,8 @@ void InputManager::ProcessKeys() {
         y/=WINDOW_HEIGHT;
         glm::mat4 iPersp = glm::inverse(mCamera.getProjMatrix());
         glm::mat4 iView = glm::inverse(mCamera.getViewMatrix());
-        std::cout << "proj matrix is "<< glm::to_string(mCamera.getProjMatrix())<<std::endl;
-        std::cout << "iproj matrix is "<< glm::to_string(iPersp)<<std::endl;
 
-        glm::vec4 Ap = glm::vec4(x*2.-1., -y*2.+1., 1., 1.) * (float)(near+0.001);
+        glm::vec4 Ap = glm::vec4(x*2.-1., -y*2.+1., 1., 1.) * (float)(near);
         glm::vec4 Bp = glm::vec4(x*2.-1., -y*2.+1., -1., 1.) * (float)far;
         glm::vec4 Ai = iView * glm::vec4(glm::vec3(iPersp * Ap), 1.);
         glm::vec4 Bi = iView * glm::vec4(glm::vec3(iPersp * Bp), 1.);
@@ -57,10 +55,12 @@ void InputManager::ProcessKeys() {
         std::cout << "B\n";
         printvec3(B);
         static Mesh mesh = Mesh<SimpleVertex>();
-        mesh = Mesh<SimpleVertex>({glm::vec3(A), glm::vec3(B)}, {0, 1}, false);
-        mesh.SetColor({1., 1., 1.});
+        static Sphere sphere = {1., 10};
+        sphere.SetPosition(glm::vec3(A+glm::normalize(B-A)*10.f));
+        mesh = Mesh<SimpleVertex>({glm::vec3(A+glm::normalize(B-A)), glm::vec3(B)}, {0, 1}, false);
+        mesh.SetColor({1., 1., 0.});
         mesh.SetPrimitiveMode(GL_LINES);
-        mWorld.AddObject(&mesh);
+        mWorld.AddObject(&sphere);
     }
 }
 

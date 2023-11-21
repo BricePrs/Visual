@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <GlobalVar.h>
+#include <cstring>
 
 #include "Mesh.h"
 
@@ -60,6 +61,22 @@ Mesh<TVertex>::Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices
 }
 
 template <class TVertex>
+void Mesh<TVertex>::ChangeMeshVertexData(std::vector<TVertex> vertices) {
+    glBindVertexArray(mVao);
+    glBindBuffer(GL_ARRAY_BUFFER, mVbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(TVertex), vertices.data(), GL_STATIC_DRAW);
+
+    void* bufferData = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+
+    if (bufferData != nullptr) {
+        std::memcpy(bufferData, vertices.data(), vertices.size()*sizeof(TVertex));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+
+}
+
+
+template <class TVertex>
 void Mesh<TVertex>::SelectShaderProgram() {
     if constexpr (std::is_same<TVertex, SimpleVertex>::value) {
         mProgram = {"default.vsh", "default.fsh"};
@@ -99,7 +116,7 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     mProgram.use();
     mProgram.setMat4("perspective", camera.getProjMatrix());
     mProgram.setMat4("view", camera.getViewMatrix());
-    mProgram.setMat4("model", glm::translate(glm::mat4(1.), mPosition)*glm::mat4_cast(mOrientation));
+    mProgram.setMat4("model", glm::translate(glm::scale(glm::mat4(1.), mScale), mPosition)*glm::mat4_cast(mOrientation));
 
     mProgram.setVec3("cameraPosition", camera.getPosition()); // Could be retrieved from view matrix
     mProgram.setVec3("backgroundColor", {.08, .05, 0.05}); // Could be retrieved from view matrix
@@ -125,6 +142,11 @@ void Mesh<TVertex>::SetPosition(glm::vec3 x) {
 template <class TVertex>
 void Mesh<TVertex>::SetRotation(glm::vec3 x) {
     mOrientation = glm::quat(x);
+}
+
+template <class TVertex>
+void Mesh<TVertex>::SetScale(glm::vec3 s) {
+    mScale = s;
 }
 
 template <class TVertex>

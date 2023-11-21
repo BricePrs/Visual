@@ -91,11 +91,14 @@ public:
 
     void Draw(const PerspectiveCamera &camera) override;
 
+    void ChangeMeshVertexData(std::vector<TVertex> vertices);
+
     void Translate(glm::vec3 x);
     void Rotate(glm::vec3 x);
 
     void SetPosition(glm::vec3 x);
     void SetRotation(glm::vec3 x);
+    void SetScale(glm::vec3 s);
     void SetColor(glm::vec3 color);
     void SetPrimitiveMode(GLenum mode);
     void SetDrawMode(GLenum mode);
@@ -116,6 +119,7 @@ private:
     bool mIsHovered;
     bool mIsSelected;
     glm::quat mOrientation;
+    glm::vec3 mScale = glm::vec3(1.);
 
     uint32_t indicesCount;
 

@@ -2,19 +2,17 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
-#include <iostream>
 #include <sstream>
 #include <string>
-#include <fstream>
 #include <thread>
 #include <chrono>
-#include "glm/vec2.hpp"
 #include "DoublePendulum.h"
 #include "Mesh.h"
 #include "Scene.h"
 #include "InputManager.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
+#include <joint.h>
 
 
 int main() {
@@ -62,17 +60,30 @@ int main() {
     auto arrowx = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(1., 0., 0.)*0.6f, glm::vec3(1., 0., 0.));
     auto arrowy = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
     auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
+
+
+    uint32_t frameCount;
+    double frameTime;
+    Joint *rootJoint = Joint::createFromFile("bvh/walk1.bvh", frameCount, frameTime);
+    std::vector<SimpleVertex> squeletonVertices;
+    std::vector<uint32_t> squeletonIndices;
+    rootJoint->buildSqueleton(squeletonVertices, squeletonIndices, glm::vec3(0.), glm::vec3(1., 0., 0.), glm::vec3(0., 1., 0.), glm::vec3(0., 0., 1.));
+
+    Mesh<SimpleVertex> squeletonMesh = {squeletonVertices, squeletonIndices};
+    squeletonMesh.SetPrimitiveMode(GL_LINES);
+    squeletonMesh.SetScale(glm::vec3(0.01));
+
     Scene world;
     world.AddObject(&grid);
-    world.AddObject(&Pendulum2);
+    //world.AddObject(&Pendulum2);
     world.AddObject(&mesh);
     world.AddObject(&ps);
     world.AddObject(&arrowx);
     world.AddObject(&arrowy);
     world.AddObject(&arrowz);
+    world.AddObject(&squeletonMesh);
 
     InputManager inputManager(window, world);
-
     while (!glfwWindowShouldClose(window)) {
         auto startFrameTime = std::chrono::high_resolution_clock::now();
         glClearColor(.08, .05, 0.05, 1.);
@@ -83,6 +94,18 @@ int main() {
         for (int i = 0; i < stepCount; ++i) {
             Pendulum2.Step2();
         }
+
+        static auto StartTime = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration<double>(time-StartTime).count();
+        double animationTime = fmod(elapsed, frameTime*frameCount) / frameTime;
+        uint32_t frameNumber = static_cast<uint32_t>(trunc(animationTime));
+        double framePercent = animationTime-frameNumber;
+
+        rootJoint->animateLerp(frameNumber, 0.);
+        squeletonVertices.clear();
+        rootJoint->buildSqueleton(squeletonVertices, squeletonIndices, glm::vec3(0.), glm::vec3(1., 0., 0.), glm::vec3(0., 1., 0.), glm::vec3(0., 0., 1.));
+        squeletonMesh.ChangeMeshVertexData(squeletonVertices);
 
         world.Draw(inputManager.GetCamera());
 
