@@ -64,7 +64,7 @@ int main() {
 
     uint32_t frameCount;
     double frameTime;
-    Joint *rootJoint = Joint::createFromFile("bvh/walk1.bvh", frameCount, frameTime);
+    Joint *rootJoint = Joint::createFromFile("bvh/run1.bvh", frameCount, frameTime);
     std::vector<SimpleVertex> squeletonVertices;
     std::vector<uint32_t> squeletonIndices;
     rootJoint->buildSqueleton(squeletonVertices, squeletonIndices, glm::vec3(0.), glm::vec3(1., 0., 0.), glm::vec3(0., 1., 0.), glm::vec3(0., 0., 1.));
