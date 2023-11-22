@@ -5,6 +5,7 @@
 #include <iostream>
 #include <GlobalVar.h>
 #include <cstring>
+#include <fstream>
 
 #include "Mesh.h"
 
@@ -102,6 +103,58 @@ void Mesh<TVertex>::SetVaoAttrib() {
     }
 }
 
+Mesh<SimpleVertex> ParseOFF(std::string fileName) {
+    std::vector<SimpleVertex> vertices;
+    std::vector<uint32_t> indices;
+    std::ifstream inputfile(fileName.data());
+    if(inputfile.good()) {
+        std::string buf;
+        inputfile >> buf;
+
+        if (buf != "OFF") {
+            std::cout << "Error while parsing OFF, expected OFF at start" << std::endl;
+        }
+
+        inputfile >> buf;
+        int vertexCount = std::stoi(buf);
+        inputfile >> buf;
+        int indicesCount = std::stoi(buf);
+
+        inputfile >> buf; // Parsing 0
+        for (int i = 0; i < vertexCount; ++i) {
+            inputfile >> buf;
+            float x = std::stof(buf, nullptr);
+            inputfile >> buf;
+            float y = std::stof(buf, nullptr);
+            inputfile >> buf;
+            float z = std::stof(buf, nullptr);
+            vertices.emplace_back(x, y, z);
+        }
+
+        for (int i = 0; i < indicesCount; ++i) {
+            inputfile >> buf;
+            if (buf != "3") {
+                std::cout << "ERROR while parsing, expected 3" << std::endl;
+            }
+            inputfile >> buf;
+            int j = std::stoi(buf);
+            inputfile >> buf;
+            int k = std::stoi(buf);
+            inputfile >> buf;
+            int l = std::stoi(buf);
+
+            indices.push_back(j);
+            indices.push_back(k);
+            indices.push_back(l);
+        }
+        inputfile.close();
+    } else {
+        std::cerr << "Failed to load the OFF file " << fileName.data() << std::endl;
+        fflush(stdout);
+    }
+    return {vertices, indices};
+}
+
 
 template <class TVertex>
 void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
@@ -116,7 +169,7 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     mProgram.use();
     mProgram.setMat4("perspective", camera.getProjMatrix());
     mProgram.setMat4("view", camera.getViewMatrix());
-    mProgram.setMat4("model", glm::translate(glm::scale(glm::mat4(1.), mScale), mPosition)*glm::mat4_cast(mOrientation));
+    mProgram.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(mOrientation));
 
     mProgram.setVec3("cameraPosition", camera.getPosition()); // Could be retrieved from view matrix
     mProgram.setVec3("backgroundColor", {.08, .05, 0.05}); // Could be retrieved from view matrix
@@ -133,6 +186,12 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     glDrawElements(mPrimitiveMode, indicesCount, GL_UNSIGNED_INT, nullptr);
 
 }
+
+template<class TVertex>
+glm::vec3 Mesh<TVertex>::GetPosition() {
+    return mPosition;
+}
+
 
 template <class TVertex>
 void Mesh<TVertex>::SetPosition(glm::vec3 x) {
@@ -339,13 +398,15 @@ void WireframeBox::Draw(const PerspectiveCamera &camera) {
 }
 
 Arrow3D::Arrow3D(glm::vec3 base, glm::vec3 direction, glm::vec3 color)
-    : Mesh<SimpleVertex>(ConstructVertices(base, direction), ConstructIndices(), true), mColor(color),
+    : Mesh<SimpleVertex>(ConstructVertices(direction), ConstructIndices(), true), mColor(color),
     mDirection(direction), mOrigin(base)
 {
     SetColor(color);
+    SetPosition(mOrigin);
 }
 
-std::vector<SimpleVertex> Arrow3D::ConstructVertices(glm::vec3 base, glm::vec3 direction) {
+std::vector<SimpleVertex> Arrow3D::ConstructVertices(glm::vec3 direction) {
+    glm::vec3 base{0.};
     std::vector<SimpleVertex> vertices = { base };
 
     float scale = glm::length(direction);
@@ -391,7 +452,7 @@ std::vector<uint32_t> Arrow3D::ConstructIndices() {
         indices.push_back(1 + 3*i + 1 + 1);
         indices.push_back(1 + 3*((i+1)%res) + 1);
 
-        indices.push_back(1+3*res);
+        indices.push_back(1 + 3*res);
         indices.push_back(1 + 3*i + 2);
         indices.push_back(1 + 3*((i+1)%res) + 2);
 

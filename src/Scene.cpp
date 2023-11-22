@@ -14,6 +14,3 @@ void Scene::AddObject(Drawable *object) {
     mSceneObjects.emplace_back(object);
 }
 
-void Scene::UpdateHover(int32_t x, int32_t y) {
-
-}

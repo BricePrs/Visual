@@ -5,7 +5,7 @@
 #ifndef VISUAL_SCENE_H
 #define VISUAL_SCENE_H
 #include <vector>
-#include <Mesh.h>
+#include <Drawable.h>
 #include <optional>
 
 
@@ -16,7 +16,6 @@ public:
 
     void Draw(const PerspectiveCamera &camera);
     void AddObject(Drawable* object);
-    void UpdateHover(int32_t x, int32_t y);
 
 private:
     std::vector<Drawable*> mSceneObjects;

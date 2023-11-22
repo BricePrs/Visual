@@ -178,26 +178,20 @@ void Joint::animate(int iframe)
     }
 }
 
-static bool QUATERNION_ROT_SLERP = false;
-
 void Joint::animateLerp(int iframe, double framePercent)
 {
     assert(0. <= framePercent && framePercent < 1.);
 
     animate(iframe);
     double p_curTx = _curTx; double p_curTy = _curTy; double p_curTz = _curTz;
-    double p_curRx = _curRx; double p_curRy = _curRy; double p_curRz = _curRz;
-    glm::quat pr = glm::quat(glm::vec3(_curRx, _curRy, _curRz));
+    glm::quat pr = glm::quat(glm::vec3(glm::radians(_curRx), glm::radians(_curRy), glm::radians(_curRz)));
     animate(iframe+1);
-    glm::quat nr = glm::quat(glm::vec3(_curRx, _curRy, _curRz));
+    glm::quat nr = glm::quat(glm::vec3(glm::radians(_curRx), glm::radians(_curRy), glm::radians(_curRz)));
     _curTx = (1.-framePercent) * p_curTx + framePercent * _curTx ; _curTy = (1.-framePercent) * p_curTy + framePercent * _curTy ; _curTz = (1.-framePercent) * p_curTz + framePercent * _curTz ;
-    _curRx = (1.-framePercent) * p_curRx + framePercent * _curRx ; _curRy = (1.-framePercent) * p_curRy + framePercent * _curRy ; _curRz = (1.-framePercent) * p_curRz + framePercent * _curRz ;
-    if (QUATERNION_ROT_SLERP) {
-        glm::vec3 res = glm::eulerAngles(glm::slerp(pr, nr, (float)framePercent));
-        _curRx = res.x;
-        _curRy = res.y;
-        _curRz = res.z;
-    }
+    glm::vec3 res = glm::eulerAngles(glm::slerp(pr, nr, (float)framePercent));
+    _curRx = glm::degrees(res.x);
+    _curRy = glm::degrees(res.y);
+    _curRz = glm::degrees(res.z);
     // Animate children :
     for (auto &child: _children) {
         child->animateLerp(iframe, framePercent);
@@ -236,9 +230,9 @@ void Joint::buildSqueleton(std::vector<SimpleVertex> &vertices, std::vector<uint
         if(!curve.name.compare("Xrotation")) rotX = glm::rotate(rotX, (float)glm::radians(-_curRx), glm::vec3(1., 0., 0.));
     }
     for (auto &curve: _dofs) {
-        if(!curve.name.compare("Zrotation")) res = glm::rotate(res, (float)glm::radians(-_curRz), glm::vec3(0., 0., 1.));
-        if(!curve.name.compare("Yrotation")) res = glm::rotate(res, (float)glm::radians(-_curRy), glm::vec3(0., 1., 0.));
-        if(!curve.name.compare("Xrotation")) res = glm::rotate(res, (float)glm::radians(-_curRx), glm::vec3(1., 0., 0.));
+        if(!curve.name.compare("Zrotation")) res = glm::rotate(glm::mat4(1.), (float)glm::radians(-_curRz), glm::vec3(0., 0., 1.))*res;
+        if(!curve.name.compare("Yrotation")) res = glm::rotate(glm::mat4(1.), (float)glm::radians(-_curRy), glm::vec3(0., 1., 0.))*res;
+        if(!curve.name.compare("Xrotation")) res = glm::rotate(glm::mat4(1.), (float)glm::radians(-_curRx), glm::vec3(1., 0., 0.))*res;
     }
 
     auto rot = glm::mat3(rotZ*rotY*rotX);
@@ -264,3 +258,28 @@ void Joint::buildSqueleton(std::vector<SimpleVertex> &vertices, std::vector<uint
 Joint::Joint()
     : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0)
 {}
+
+void Joint::buildSqueletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform) const {
+    glm::mat4 childTransform = glm::mat4(1.);
+    for (auto &curve: _dofs) {
+        if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
+        if(!curve.name.compare("Yrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
+        if(!curve.name.compare("Xrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
+    }
+
+    childTransform[3][0] = (float)(_curTx + _offX);
+    childTransform[3][1] = (float)(_curTy + _offY);
+    childTransform[3][2] = (float)(_curTz + _offZ);
+
+    childTransform = transform * childTransform;
+
+    for (auto &child: _children) {
+        vertices.emplace_back(glm::vec3(childTransform*glm::vec4(0., 0., 0., 1.)));
+        indices.push_back(vertices.size() - 1);
+        indices.push_back(vertices.size());
+        child->buildSqueletonMatrices(vertices, indices, childTransform);
+    }
+    if (_children.empty()) {
+        vertices.emplace_back(glm::vec3(childTransform*glm::vec4(0., 0., 0., 1.)));
+    }
+}

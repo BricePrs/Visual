@@ -5,7 +5,9 @@
 #ifndef VISUAL_INPUTMANAGER_H
 #define VISUAL_INPUTMANAGER_H
 
+#include <ProjectIncludes.h>
 #include "Scene.h"
+#include "Mesh.h"
 
 enum InputManagerState {
     HoverDetection,

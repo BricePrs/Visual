@@ -44,7 +44,7 @@ void InputManager::ProcessKeys() {
         glm::mat4 iPersp = glm::inverse(mCamera.getProjMatrix());
         glm::mat4 iView = glm::inverse(mCamera.getViewMatrix());
 
-        glm::vec4 Ap = glm::vec4(x*2.-1., -y*2.+1., 1., 1.) * (float)(near);
+        glm::vec4 Ap = glm::vec4(x*2.-1., -y*2.+1., -1., 1.) * (float)(near);
         glm::vec4 Bp = glm::vec4(x*2.-1., -y*2.+1., -1., 1.) * (float)far;
         glm::vec4 Ai = iView * glm::vec4(glm::vec3(iPersp * Ap), 1.);
         glm::vec4 Bi = iView * glm::vec4(glm::vec3(iPersp * Bp), 1.);
@@ -87,7 +87,7 @@ void InputManager::ProcessMouse() {
                 }
             } else {
                 mState = CameraMove;
-                glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+                glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
             return;
         }
@@ -144,8 +144,8 @@ void InputManager::MouseMoveCallback(double x, double y) {
             mHoveredObject = nullptr;
         }
     } else if (mState == ActionMode) {
-        mActionObjects->OnActionMove(mCamera, (x / WINDOW_WIDTH) * 2. - .5,
-                                     (WINDOW_HEIGHT - y + 1) / WINDOW_HEIGHT * 2. - .5,
+        mActionObjects->OnActionMove(mWorld , mCamera, (x / WINDOW_WIDTH) * 2. - 1.,
+                                     (WINDOW_HEIGHT - y + 1) / WINDOW_HEIGHT * 2. - 1.,
                                      (dx / WINDOW_WIDTH * 2.),
                                      (dy / WINDOW_HEIGHT * 2.));
     } else if (mState == CameraMove) {

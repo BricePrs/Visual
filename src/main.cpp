@@ -1,6 +1,5 @@
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <ProjectIncludes.h>
 #include <vector>
 #include <sstream>
 #include <string>
@@ -40,19 +39,26 @@ int main() {
 
 
     std::vector<SimpleColorVertex> vertices= {
-            {{0., 0., 2.}, {1., 0.3, .4}},
-            {{1., 0., 2.}, {1., 0.3, .4}},
-            {{1., 1., 2.}, {1., 0.3, .4}},
-            {{0., 1., 2.}, {1., 0.3, .4}}};
+            {{0., 0., 0.}, {1., 0.3, .4}},
+            {{1., 0., 0.}, {1., 0.3, .4}},
+            {{1., 1., 0.}, {1., 0.3, .4}},
+            {{0., 1., 0.}, {1., 0.3, .4}}};
 
     std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
     Mesh mesh = {vertices, indices, true};
+    Mesh mesh2 = {vertices, indices, true};
+    mesh.SetScale(glm::vec3(1., 0.5, 1.));
+    mesh.SetPosition(glm::vec3(-8.3, 0., 9.8));
+    mesh2.SetPosition(glm::vec3(-8.3, 0.5, 9.8));
+    mesh2.SetScale(glm::vec3(1., .5, 1.));
+    mesh2.SetRotation(glm::vec3(-3.1415/2., 0., 0.));
+
+
     Tube tube = {0.3, 3., 10};
     Sphere sp = {0.9, 10};
     sp.Translate(glm::vec3(-1.));
 
     double dt = 0.0005;
-    //auto Pendulum = DoublePendulum({0., 0.0}, 3.141592*0.9, -3.141592*0.1, 2., 1., dt);
     auto Pendulum2 = DoublePendulum({0., 0.0}, 3.141592*0.9, -3.141592*0.1, 2., 1., dt);
     auto grid = Grid(100, 1);
 
@@ -61,10 +67,14 @@ int main() {
     auto arrowy = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
     auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
 
+    auto parsedMesh = ParseOFF("bvh/skin.off");
+    parsedMesh.SetScale(glm::vec3(0.01));
+    parsedMesh.SetPosition({-3, 1., 0.});
+    parsedMesh.SetDrawMode(GL_LINE);
 
     uint32_t frameCount;
     double frameTime;
-    Joint *rootJoint = Joint::createFromFile("bvh/run1.bvh", frameCount, frameTime);
+    Joint *rootJoint = Joint::createFromFile("bvh/walkSit.bvh", frameCount, frameTime);
     std::vector<SimpleVertex> squeletonVertices;
     std::vector<uint32_t> squeletonIndices;
     rootJoint->buildSqueleton(squeletonVertices, squeletonIndices, glm::vec3(0.), glm::vec3(1., 0., 0.), glm::vec3(0., 1., 0.), glm::vec3(0., 0., 1.));
@@ -72,16 +82,20 @@ int main() {
     Mesh<SimpleVertex> squeletonMesh = {squeletonVertices, squeletonIndices};
     squeletonMesh.SetPrimitiveMode(GL_LINES);
     squeletonMesh.SetScale(glm::vec3(0.01));
+    squeletonMesh.SetPosition(glm::vec3(-10, -1., 10.));
+
 
     Scene world;
     world.AddObject(&grid);
     //world.AddObject(&Pendulum2);
     world.AddObject(&mesh);
+    world.AddObject(&mesh2);
     world.AddObject(&ps);
     world.AddObject(&arrowx);
     world.AddObject(&arrowy);
     world.AddObject(&arrowz);
     world.AddObject(&squeletonMesh);
+    world.AddObject(&parsedMesh);
 
     InputManager inputManager(window, world);
     while (!glfwWindowShouldClose(window)) {
@@ -102,9 +116,9 @@ int main() {
         uint32_t frameNumber = static_cast<uint32_t>(trunc(animationTime));
         double framePercent = animationTime-frameNumber;
 
-        rootJoint->animateLerp(frameNumber, 0.);
+        rootJoint->animateLerp(frameNumber, framePercent);
         squeletonVertices.clear();
-        rootJoint->buildSqueleton(squeletonVertices, squeletonIndices, glm::vec3(0.), glm::vec3(1., 0., 0.), glm::vec3(0., 1., 0.), glm::vec3(0., 0., 1.));
+        rootJoint->buildSqueletonMatrices(squeletonVertices, squeletonIndices, glm::mat4(1.));
         squeletonMesh.ChangeMeshVertexData(squeletonVertices);
 
         world.Draw(inputManager.GetCamera());

@@ -15,7 +15,8 @@
 #include <iostream>
 #include <unordered_set>
 #include <glm/gtc/matrix_inverse.hpp>
-
+#include<Scene.h>
+#include "Drawable.h"
 
 struct SimpleVertex {
     glm::vec3 position;
@@ -31,10 +32,7 @@ struct SimpleColorVertex{
     SimpleColorVertex(glm::vec3 pos, glm::vec3 col) : position(pos), color(col) {}
 };
 
-class Drawable {
-public:
-    virtual void Draw(const PerspectiveCamera &camera) = 0;
-};
+
 
 class InteractiveObject : public Drawable {
 public:
@@ -64,7 +62,7 @@ public:
     virtual void OnHoverQuit() {};
     virtual void OnClick() {};
     virtual void OnActionStart(int32_t x, int32_t y) {};
-    virtual void OnActionMove(const PerspectiveCamera &camera, double x, double y, double dx, double dy) {};
+    virtual void OnActionMove(Scene &world, const PerspectiveCamera &camera, double x, double y, double dx, double dy) {};
 
     virtual bool HasAction() { return false; };
 
@@ -96,6 +94,7 @@ public:
     void Translate(glm::vec3 x);
     void Rotate(glm::vec3 x);
 
+    glm::vec3 GetPosition();
     void SetPosition(glm::vec3 x);
     void SetRotation(glm::vec3 x);
     void SetScale(glm::vec3 s);
@@ -131,6 +130,9 @@ private:
     GLenum mPrimitiveMode = GL_TRIANGLES;
     GLenum mDrawMode = GL_FILL;
 };
+
+
+Mesh<SimpleVertex> ParseOFF(std::string fileName);
 
 
 template class Mesh<SimpleVertex>;
@@ -203,7 +205,7 @@ public:
 
 protected:
 
-    static std::vector<SimpleVertex> ConstructVertices(glm::vec3 base, glm::vec3 direction);
+    static std::vector<SimpleVertex> ConstructVertices(glm::vec3 direction);
     static std::vector<uint32_t> ConstructIndices();
 
     glm::vec3 mColor;
@@ -219,14 +221,12 @@ public:
 
     bool HasAction() override { return true; };
     void OnActionStart(int32_t x, int32_t y) override {};
-    void OnActionMove(const PerspectiveCamera &camera, double x, double y, double dx, double dy) override {
-        std::cout << "x = " << x << " y = " << y << " dx = " << dx << " dy = " << dy << std::endl;
+    void OnActionMove(Scene &world, const PerspectiveCamera &camera, double x, double y, double dx, double dy) override {
         glm::mat4 iProj = glm::inverse(camera.getProjMatrix());
         glm::mat4 iView = glm::inverse(camera.getViewMatrix());
         double near = camera.getNear(), far = camera.getFar();
-        double dt = AxisPosition(iProj, iView, camera.getPosition(), near, far, x+dx, y+dy)-AxisPosition(iProj, iView, camera.getPosition(), near, far, x, y);
-        std::cout << dt << std::endl;
-        Translate(mDirection*(float)dt);
+        double t = AxisPosition(iProj, iView, camera.getPosition(), near, far, x+dx, y+dy);
+        SetPosition(mOrigin + glm::normalize(mDirection)*(float)t);
     };
 
 private:
@@ -245,7 +245,6 @@ private:
         float t2 = (glm::dot(oo, r2)-glm::dot(oo, r1)*glm::dot(r1, r2))/(1.-glm::dot(r1, r2)*glm::dot(r1, r2));
         return t2;
     }
-
 };
 
 
