@@ -9,9 +9,11 @@
 #include "Mesh.h"
 #include "Scene.h"
 #include "InputManager.h"
+#include "Grid.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
+#include <main.cuh>
 
 
 int main() {
@@ -60,7 +62,7 @@ int main() {
 
     double dt = 0.0005;
     auto Pendulum2 = DoublePendulum({0., 0.0}, 3.141592*0.9, -3.141592*0.1, 2., 1., dt);
-    auto grid = Grid(100, 1);
+    auto grid = GraphGrid(100, 1);
 
     auto ps = ParticleSystem(glm::vec3(10., 0., 0.), glm::vec3(3., 2., 4.), 0.4, 100);
     auto arrowx = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(1., 0., 0.)*0.6f, glm::vec3(1., 0., 0.));
@@ -84,6 +86,17 @@ int main() {
     squeletonMesh.SetScale(glm::vec3(0.01));
     squeletonMesh.SetPosition(glm::vec3(-10, -1., 10.));
 
+    oui();
+
+    int res = 5000;
+    Quad quad = Quad();
+    Grid texGrid = Grid(GridSize(res, res));
+    Texture tex = {texGrid.GetData(), static_cast<uint32_t>(res), static_cast<uint32_t>(res), 1};
+    quad.SetTexture(tex);
+
+    quad.Translate({0., 10., 20.});
+    quad.SetScale(glm::vec3(20.f));
+    //quad.SetTexture();
 
     Scene world;
     world.AddObject(&grid);
@@ -96,6 +109,7 @@ int main() {
     world.AddObject(&arrowz);
     world.AddObject(&squeletonMesh);
     world.AddObject(&parsedMesh);
+    world.AddObject(&quad);
 
     InputManager inputManager(window, world);
     while (!glfwWindowShouldClose(window)) {

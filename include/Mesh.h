@@ -17,6 +17,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include<Scene.h>
 #include "Drawable.h"
+#include "Texture.h"
 
 struct SimpleVertex {
     glm::vec3 position;
@@ -30,6 +31,13 @@ struct SimpleColorVertex{
     glm::vec3 color;
 
     SimpleColorVertex(glm::vec3 pos, glm::vec3 col) : position(pos), color(col) {}
+};
+
+struct SimpleUvVertex{
+    glm::vec3 position;
+    glm::vec2 uv;
+
+    SimpleUvVertex(glm::vec3 pos, glm::vec2 uv) : position(pos), uv(uv) {}
 };
 
 
@@ -82,9 +90,9 @@ template <class TVertex>
 class Mesh : public InteractiveObject {
 public:
 
-    Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices, bool interactive);
+    Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive);
 
-    Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices) : Mesh(vertices, indices, false) {}
+    Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices) : Mesh(vertices, indices, false) {}
     Mesh() : Mesh(std::vector<TVertex>(), std::vector<uint32_t>(), false) {}
 
     void Draw(const PerspectiveCamera &camera) override;
@@ -101,6 +109,7 @@ public:
     void SetColor(glm::vec3 color);
     void SetPrimitiveMode(GLenum mode);
     void SetDrawMode(GLenum mode);
+    void SetTexture(Texture texture);
 
     void OnHover() override;
     void OnHoverQuit() override;
@@ -120,6 +129,8 @@ private:
     glm::quat mOrientation;
     glm::vec3 mScale = glm::vec3(1.);
 
+    std::optional<Texture> mTexture;
+
     uint32_t indicesCount;
 
     GLuint mVao;
@@ -131,12 +142,12 @@ private:
     GLenum mDrawMode = GL_FILL;
 };
 
-
 Mesh<SimpleVertex> ParseOFF(std::string fileName);
 
 
 template class Mesh<SimpleVertex>;
 template class Mesh<SimpleColorVertex>;
+template class Mesh<SimpleUvVertex>;
 
 
 class Tube : public Mesh<SimpleVertex> {
@@ -169,10 +180,10 @@ private:
     uint32_t mResolution;
 };
 
-class Grid : public Drawable {
+class GraphGrid : public Drawable {
 public:
 
-    Grid(uint16_t resolution, double scale);
+    GraphGrid(uint16_t resolution, double scale);
 
     void Draw(const PerspectiveCamera &camera);
 
@@ -245,6 +256,25 @@ private:
         float t2 = (glm::dot(oo, r2)-glm::dot(oo, r1)*glm::dot(r1, r2))/(1.-glm::dot(r1, r2)*glm::dot(r1, r2));
         return t2;
     }
+};
+
+class Quad : public Mesh<SimpleUvVertex> {
+public:
+
+    Quad() : Mesh(ConstructVertices(), ConstructIndices()) {}
+
+private:
+    static std::vector<SimpleUvVertex> ConstructVertices();
+    static std::vector<uint32_t> ConstructIndices();
+
+
+    inline static const std::vector<SimpleUvVertex> VERTICES = {
+            {{-.5, -.5, 0.}, {0, 0}},
+            {{.5, -.5, 0.}, {1, 0}},
+            {{.5, .5, 0.}, {1, 1}},
+            {{-.5, .5, 0.}, {0, 1}}
+    };
+    inline static const std::vector<uint32_t> INDICES = {0, 1, 2, 0, 2, 3};
 };
 
 

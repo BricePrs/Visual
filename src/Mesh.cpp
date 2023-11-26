@@ -36,7 +36,7 @@ void Mesh<TVertex>::SetDrawMode(GLenum mode) {
 }
 
 template <class TVertex>
-Mesh<TVertex>::Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices, bool interactive)
+Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive)
         :   InteractiveObject(interactive),
         mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.)
         , mIsHovered(false), mIsSelected(false)
@@ -83,6 +83,8 @@ void Mesh<TVertex>::SelectShaderProgram() {
         mProgram = {"default.vsh", "default.fsh"};
     } else if constexpr (std::is_same<TVertex, SimpleColorVertex>::value) {
         mProgram = {"defaultVertexColor.vsh", "defaultVertexColor.fsh"};
+    } else if constexpr (std::is_same<TVertex, SimpleUvVertex>::value) {
+        mProgram = {"default_texture.vsh", "default_texture.fsh"};
     } else {
         // Do nothing
     }
@@ -97,7 +99,12 @@ void Mesh<TVertex>::SetVaoAttrib() {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleColorVertex), (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleColorVertex), (void *)sizeof(SimpleColorVertex::position));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleColorVertex), (void *)offsetof(SimpleColorVertex, color));
+    } else if constexpr (std::is_same<TVertex, SimpleUvVertex>::value) {
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleUvVertex), (void *)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleUvVertex), (void *)offsetof(SimpleUvVertex, uv));
     } else {
         // Do nothing
     }
@@ -182,6 +189,12 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     }
     mProgram.setVec3("objectColor",mColor);
 
+    mProgram.setInt("objectTexture", 0);
+
+    if (mTexture.has_value()) {
+        mTexture.value().AssignToLocation(0);
+    }
+
     glBindVertexArray(mVao);
     glDrawElements(mPrimitiveMode, indicesCount, GL_UNSIGNED_INT, nullptr);
 
@@ -190,6 +203,11 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
 template<class TVertex>
 glm::vec3 Mesh<TVertex>::GetPosition() {
     return mPosition;
+}
+
+template<class TVertex>
+void Mesh<TVertex>::SetTexture(Texture texture) {
+    mTexture = texture;
 }
 
 
@@ -295,7 +313,7 @@ Sphere::Sphere(double radius, uint32_t resolution)
         : Sphere(radius, resolution, true)
 {}
 
-Grid::Grid(uint16_t resolution, double scale) {
+GraphGrid::GraphGrid(uint16_t resolution, double scale) {
     double halfSize = scale*resolution*.5;
     std::vector<SimpleVertex>   gridVertices;
     std::vector<uint32_t>       gridIndices;
@@ -339,7 +357,7 @@ Grid::Grid(uint16_t resolution, double scale) {
     mReferentialLines.SetPrimitiveMode(GL_LINES);
 }
 
-void Grid::Draw(const PerspectiveCamera &camera) {
+void GraphGrid::Draw(const PerspectiveCamera &camera) {
     mScaleGrid.Draw(camera);
     mReferentialLines.Draw(camera);
 }
@@ -463,3 +481,10 @@ std::vector<uint32_t> Arrow3D::ConstructIndices() {
 }
 
 
+std::vector<SimpleUvVertex> Quad::ConstructVertices() {
+    return VERTICES;
+}
+
+std::vector<uint32_t> Quad::ConstructIndices() {
+    return INDICES;
+}
