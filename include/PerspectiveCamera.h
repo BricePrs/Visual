@@ -18,8 +18,8 @@ public:
     [[nodiscard]] double getNear() const;
     [[nodiscard]] double getFar() const;
 
-    void translate(glm::vec3 t);
-    void rotate(double dPitch, double dYaw);
+    virtual void translate(glm::vec3 t);
+    virtual void rotate(double dPitch, double dYaw);
 
     glm::vec3 getPosition() const;
     glm::vec3 getUp() const;

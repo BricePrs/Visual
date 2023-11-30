@@ -18,6 +18,7 @@
 #include<Scene.h>
 #include "Drawable.h"
 #include "Texture.h"
+#include "Collider.h"
 
 struct SimpleVertex {
     glm::vec3 position;
@@ -102,7 +103,7 @@ public:
     void Translate(glm::vec3 x);
     void Rotate(glm::vec3 x);
 
-    glm::vec3 GetPosition();
+    glm::vec3 GetPosition() const;
     void SetPosition(glm::vec3 x);
     void SetRotation(glm::vec3 x);
     void SetScale(glm::vec3 s);
@@ -114,6 +115,8 @@ public:
     void OnHover() override;
     void OnHoverQuit() override;
     void OnClick() override;
+
+    static Mesh LoadFromPLY(const std::string &fileName);
 
 private:
 
@@ -165,11 +168,15 @@ private:
     uint32_t mResolution;
 };
 
-class Sphere : public Mesh<SimpleVertex> {
+class Sphere : public Mesh<SimpleVertex>, public Collider {
 public:
 
     Sphere(double radius, uint32_t resolution, bool interactive);
     Sphere(double radius, uint32_t resolution);
+
+    bool Intersect(glm::vec3 pt) const override;
+    bool Intersect(glm::vec3 LowerAABB, glm::vec3 UpperAABB) const;
+    glm::vec3 ShortestSurfacePoint(glm::vec3 pt) const override;
 
 private:
 
@@ -198,6 +205,7 @@ public:
     WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color);
 
     void Draw(const PerspectiveCamera &camera) override;
+    void UpdateBox(glm::vec3 center, glm::vec3 sides);
 
 private:
 

@@ -6,8 +6,17 @@
 #include <GlobalVar.h>
 #include <cstring>
 #include <fstream>
+#include <happly/happly.h>
 
 #include "Mesh.h"
+
+template<class TVertex>
+Mesh<TVertex> Mesh<TVertex>::LoadFromPLY(const std::string &fileName) {
+    auto parsedData = happly::PLYData(fileName);
+    std::vector<std::array<double, 3>> vPos = parsedData.getVertexPositions();
+    std::vector<std::vector<size_t>> fInd = parsedData.getFaceIndices<size_t>();
+    return {{}, {}};
+}
 
 template<class TVertex>
 void Mesh<TVertex>::OnClick() {
@@ -201,7 +210,7 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
 }
 
 template<class TVertex>
-glm::vec3 Mesh<TVertex>::GetPosition() {
+glm::vec3 Mesh<TVertex>::GetPosition() const  {
     return mPosition;
 }
 
@@ -271,6 +280,22 @@ Tube::Tube(double radius, double length, uint32_t resolution)
 
 }
 
+bool Sphere::Intersect(glm::vec3 pt) const {
+    auto a = pt-GetPosition();
+    return glm::dot(a, a)<mRadius*mRadius;
+}
+
+bool Sphere::Intersect(glm::vec3 LowerAABB, glm::vec3 UpperAABB) const {
+    glm::vec3 middleAABB = (LowerAABB + UpperAABB) * .5f;
+    glm::vec3 radiusAABB = UpperAABB-middleAABB;
+    glm::vec3 boxPointVec = glm::abs(middleAABB - GetPosition());
+    glm::vec3 boxPointInter = glm::min(radiusAABB, boxPointVec);
+    return glm::length(boxPointVec-boxPointInter) < mRadius;
+}
+
+glm::vec3 Sphere::ShortestSurfacePoint(glm::vec3 pt) const  {
+    return ((float)mRadius)*glm::normalize(pt-GetPosition())+GetPosition()-pt;
+}
 
 std::vector<uint32_t> Sphere::ConstructIndices(uint32_t resolution) {
     std::vector<uint32_t> indices;
@@ -281,8 +306,8 @@ std::vector<uint32_t> Sphere::ConstructIndices(uint32_t resolution) {
             indices.emplace_back((i-1)*resolution+(j+1)%resolution);
             indices.emplace_back((i-1)*resolution+j);
 
-            indices.emplace_back(i*resolution+j);
             indices.emplace_back((i-1)*resolution+(j+1)%resolution);
+            indices.emplace_back(i*resolution+j);
             indices.emplace_back(i*resolution+(j+1)%resolution);
         }
     }
@@ -389,17 +414,17 @@ void InteractiveObject::Draw(const PerspectiveCamera &camera) {
 
 WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) {
     std::vector<SimpleVertex> vertices = {
-            center - sides,                                   // 0
+            glm::vec3(-1, -1, -1),                                   // 0
 
-            center + sides*glm::vec3(-1, -1, 1),    // 1
-            center + sides*glm::vec3(-1, 1, -1),    // 2
-            center + sides*glm::vec3(1, -1, -1),    // 3
+            glm::vec3(-1, -1, 1),    // 1
+            glm::vec3(-1, 1, -1),    // 2
+            glm::vec3(1, -1, -1),    // 3
 
-            center + sides*glm::vec3(-1, 1, 1),     // 4
-            center + sides*glm::vec3(1, -1, 1),     // 5
-            center + sides*glm::vec3(1, 1, -1),     // 6
+            glm::vec3(-1, 1, 1),     // 4
+            glm::vec3(1, -1, 1),     // 5
+            glm::vec3(1, 1, -1),     // 6
 
-            center + sides,                                   // 7
+            glm::vec3(1, 1, 1),                                   // 7
     };
     std::vector<uint32_t> indices = {
             0, 1, 0, 2, 0, 3,
@@ -409,7 +434,14 @@ WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) {
     mMesh = {vertices, indices, false};
     mMesh.SetPrimitiveMode(GL_LINES);
     mMesh.SetColor(color);
+    UpdateBox(center, sides);
 }
+
+void WireframeBox::UpdateBox(glm::vec3 center, glm::vec3 sides) {
+    mMesh.SetPosition(center);
+    mMesh.SetScale(sides);
+}
+
 
 void WireframeBox::Draw(const PerspectiveCamera &camera) {
     mMesh.Draw(camera);

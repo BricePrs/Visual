@@ -14,3 +14,11 @@ void Scene::AddObject(Drawable *object) {
     mSceneObjects.emplace_back(object);
 }
 
+void Scene::AddCollider(Collider *object) {
+    mSceneColliderObjects.emplace_back(object);
+}
+
+std::vector<Collider *> &Scene::GetColliderObjects() {
+    return mSceneColliderObjects;
+}
+

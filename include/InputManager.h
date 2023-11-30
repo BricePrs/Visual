@@ -6,8 +6,12 @@
 #define VISUAL_INPUTMANAGER_H
 
 #include <ProjectIncludes.h>
+#include <imgui/imgui.h>
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 #include "Scene.h"
 #include "Mesh.h"
+
 
 enum InputManagerState {
     HoverDetection,
@@ -19,7 +23,7 @@ enum InputManagerState {
 class InputManager {
 public:
 
-    InputManager(GLFWwindow* window, Scene &world);
+    InputManager(GLFWwindow* window, Scene &world, PerspectiveCamera* camera);
 
     void ProcessInputs();
     const PerspectiveCamera &GetCamera();
@@ -47,7 +51,7 @@ private:
     InteractiveObject *mSelectedObject;
 
     // Camera Move
-    PerspectiveCamera mCamera;
+    PerspectiveCamera* mCamera;
 
     double mCursorLastX;
     double mCursorLastY;
@@ -55,6 +59,7 @@ private:
     double mCameraVelocity;
     double mCameraAngularSpeed;
 
+    ImGuiIO& mImGuiIO = ImGui::GetIO();
 };
 
 

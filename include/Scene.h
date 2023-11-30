@@ -7,6 +7,7 @@
 #include <vector>
 #include <Drawable.h>
 #include <optional>
+#include "Collider.h"
 
 
 class Scene {
@@ -16,9 +17,13 @@ public:
 
     void Draw(const PerspectiveCamera &camera);
     void AddObject(Drawable* object);
+    void AddCollider(Collider* object);
+    std::vector<Drawable*>& GetObjects();
+    std::vector<Collider*>& GetColliderObjects();
 
 private:
     std::vector<Drawable*> mSceneObjects;
+    std::vector<Collider*> mSceneColliderObjects;
     std::optional<uint32_t> mSelectedObject;
 };
 

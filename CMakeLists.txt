@@ -29,12 +29,13 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
 # Compile CUDA code
 find_package(CUDA REQUIRED)
-cuda_add_library(CudaLibrary STATIC ${CUDA_SRC_FILES} ${CUDA_HEADER_FILES})
-set_target_properties(CudaLibrary PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 
-add_executable(
+cuda_add_executable(
         Visual
+        vendors/happly/happly.h
+        vendors/stb_image/stb_image.h
+        vendors/stb_image/stb_image.cpp
         vendors/glad/glad.c
         vendors/imgui/imgui.cpp
         vendors/imgui/imgui_impl_glfw.cpp
@@ -43,9 +44,13 @@ add_executable(
         vendors/imgui/imgui_tables.cpp
         vendors/imgui/imgui_widgets.cpp
 
-        ${HEADER_FILES}
-        ${SRC_FILES}
+        ${CUDA_SRC_FILES} ${CUDA_HEADER_FILES}
+        ${SRC_FILES} ${HEADER_FILES}
+
+        main.cpp
 )
+
+set_target_properties(Visual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 
 target_link_libraries(Visual -lglfw)
@@ -55,7 +60,68 @@ target_link_libraries(Visual -lpthread)
 target_link_libraries(Visual -lXrandr)
 target_link_libraries(Visual -lXi)
 target_link_libraries(Visual -ldl)
-target_link_libraries(Visual CudaLibrary)
 
+
+cuda_add_executable(
+        RTVisual
+        vendors/happly/happly.h
+        vendors/stb_image/stb_image.h
+        vendors/stb_image/stb_image.cpp
+        vendors/glad/glad.c
+        vendors/imgui/imgui.cpp
+        vendors/imgui/imgui_impl_glfw.cpp
+        vendors/imgui/imgui_impl_opengl3.cpp
+        vendors/imgui/imgui_demo.cpp
+        vendors/imgui/imgui_draw.cpp
+        vendors/imgui/imgui_tables.cpp
+        vendors/imgui/imgui_widgets.cpp
+
+        ${CUDA_SRC_FILES} ${CUDA_HEADER_FILES}
+        ${SRC_FILES} ${HEADER_FILES}
+
+        rt_main.cpp
+)
+
+set_target_properties(RTVisual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+
+target_link_libraries(RTVisual -lglfw)
+target_link_libraries(RTVisual -lX11)
+target_link_libraries(RTVisual -lGL)
+target_link_libraries(RTVisual -lpthread)
+target_link_libraries(RTVisual -lXrandr)
+target_link_libraries(RTVisual -lXi)
+target_link_libraries(RTVisual -ldl)
+
+
+cuda_add_executable(
+        SBVisual
+        vendors/happly/happly.h
+        vendors/stb_image/stb_image.h
+        vendors/stb_image/stb_image.cpp
+        vendors/glad/glad.c
+        vendors/imgui/imgui.cpp
+        vendors/imgui/imgui_impl_glfw.cpp
+        vendors/imgui/imgui_impl_opengl3.cpp
+        vendors/imgui/imgui_draw.cpp
+        vendors/imgui/imgui_tables.cpp
+        vendors/imgui/imgui_widgets.cpp
+
+        ${CUDA_SRC_FILES} ${CUDA_HEADER_FILES}
+        ${SRC_FILES} ${HEADER_FILES}
+
+        sb_main.cpp
+)
+
+set_target_properties(SBVisual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+
+target_link_libraries(SBVisual -lglfw)
+target_link_libraries(SBVisual -lX11)
+target_link_libraries(SBVisual -lGL)
+target_link_libraries(SBVisual -lpthread)
+target_link_libraries(SBVisual -lXrandr)
+target_link_libraries(SBVisual -lXi)
+target_link_libraries(SBVisual -ldl)
 
 

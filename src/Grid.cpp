@@ -12,6 +12,8 @@ Grid::Grid(GridSize size) : size(size) {
 }
 
 void Grid::RandomFill() {
+    data.clear();
+    data.reserve(size.linearSize);
     for (uint32_t i = 0; i < size.linearSize; ++i) {
         data.push_back(static_cast<char>(rand()));
     }
