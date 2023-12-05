@@ -11,7 +11,7 @@
 class AnimatedMesh : public Mesh<SimpleVertex> {
 public:
 
-    AnimatedMesh(Joint &joint, std::string fileName);
+    AnimatedMesh(const std::string &skeletonFileName, const std::string &skinFileName, const std::string &weightsFileName);
 
 private:
 
