@@ -73,8 +73,14 @@ Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint
 
 template <class TVertex>
 void Mesh<TVertex>::ChangeVertices(std::vector<TVertex> &vertices) {
-    mRequestUpdateGPU = true;
+    mRequestUpdateVBO = true;
     mVertices = vertices;
+}
+
+template <class TVertex>
+void Mesh<TVertex>::ChangeIndices(std::vector<uint32_t > &indices) {
+    mRequestUpdateEBO = true;
+    mIndices = indices;
 }
 
 template <class TVertex>
@@ -87,6 +93,21 @@ void Mesh<TVertex>::UpdateVerticesData() {
 
     if (bufferData != nullptr) {
         std::memcpy(bufferData, mVertices.data(), mVertices.size()*sizeof(TVertex));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+
+}
+
+template <class TVertex>
+void Mesh<TVertex>::UpdateIndicesData() {
+    glBindVertexArray(mVao);
+    glBindBuffer(GL_ARRAY_BUFFER, mEbo);
+    glBufferData(GL_ARRAY_BUFFER, mIndices.size()*sizeof(uint32_t), mIndices.data(), GL_STATIC_DRAW);
+
+    void* bufferData = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+
+    if (bufferData != nullptr) {
+        std::memcpy(bufferData, mIndices.data(), mIndices.size()*sizeof(TVertex));
         glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 
@@ -147,7 +168,7 @@ void Mesh<SimpleNormalVertex>::RecomputeVerticesAttributes() {
     for (auto &vertex: mVertices) {
         vertex.normal = glm::normalize(vertex.normal);
     }
-    mRequestUpdateGPU = true;
+    mRequestUpdateVBO = true;
 }
 
 
@@ -207,9 +228,13 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName) {
 template <class TVertex>
 void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
 
-    if (mRequestUpdateGPU) {
+    if (mRequestUpdateVBO) {
         UpdateVerticesData();
-        mRequestUpdateGPU = false;
+        mRequestUpdateVBO = false;
+    }
+    if (mRequestUpdateVBO) {
+        UpdateIndicesData();
+        mRequestUpdateVBO = false;
     }
 
     InteractiveObject::Draw(camera);

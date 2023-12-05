@@ -107,8 +107,10 @@ public:
     void Draw(const PerspectiveCamera &camera) override;
 
     void ChangeVertices(std::vector<TVertex> &vertices);
+    void ChangeIndices(std::vector<uint32_t> &indices);
 
     void UpdateVerticesData();
+    void UpdateIndicesData();
 
     void Translate(glm::vec3 x);
     void Rotate(glm::vec3 x);
@@ -159,7 +161,8 @@ private:
     GLenum mPrimitiveMode = GL_TRIANGLES;
     GLenum mDrawMode = GL_FILL;
 
-    bool mRequestUpdateGPU = false;
+    bool mRequestUpdateVBO = false;
+    bool mRequestUpdateEBO = false;
 };
 
 

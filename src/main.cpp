@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "Scene.h"
 #include "InputManager.h"
+#include "AnimatedMesh.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
@@ -67,22 +68,8 @@ int main() {
     auto arrowy = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
     auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
 
-    auto parsedMesh = ParseOFF("bvh/skin.off");
-    parsedMesh.SetScale(glm::vec3(0.01));
-    parsedMesh.SetPosition({-3, 1., 0.});
-    parsedMesh.SetDrawMode(GL_LINE);
 
-    uint32_t frameCount;
-    double frameTime;
-    Joint *rootJoint = Joint::createFromFile("bvh/walkSit.bvh", frameCount, frameTime);
-    std::vector<SimpleVertex> squeletonVertices;
-    std::vector<uint32_t> squeletonIndices;
-    rootJoint->buildSqueleton(squeletonVertices, squeletonIndices, glm::vec3(0.), glm::vec3(1., 0., 0.), glm::vec3(0., 1., 0.), glm::vec3(0., 0., 1.));
-
-    Mesh<SimpleVertex> squeletonMesh = {squeletonVertices, squeletonIndices};
-    squeletonMesh.SetPrimitiveMode(GL_LINES);
-    squeletonMesh.SetScale(glm::vec3(0.01));
-    squeletonMesh.SetPosition(glm::vec3(-10, -1., 10.));
+    AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
 
 
     Scene world;
@@ -94,8 +81,7 @@ int main() {
     world.AddObject(&arrowx);
     world.AddObject(&arrowy);
     world.AddObject(&arrowz);
-    world.AddObject(&squeletonMesh);
-    world.AddObject(&parsedMesh);
+    world.AddObject(&animatedMesh);
 
     InputManager inputManager(window, world);
     while (!glfwWindowShouldClose(window)) {
@@ -112,14 +98,8 @@ int main() {
         static auto StartTime = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
-        double animationTime = fmod(elapsed, frameTime*frameCount) / frameTime;
-        uint32_t frameNumber = static_cast<uint32_t>(trunc(animationTime));
-        double framePercent = animationTime-frameNumber;
 
-        rootJoint->animateLerp(frameNumber, framePercent);
-        squeletonVertices.clear();
-        rootJoint->buildSqueletonMatrices(squeletonVertices, squeletonIndices, glm::mat4(1.));
-        squeletonMesh.ChangeVertices(squeletonVertices);
+        animatedMesh.Update(elapsed);
 
         world.Draw(inputManager.GetCamera());
 

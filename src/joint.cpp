@@ -218,7 +218,7 @@ void Joint::nbDofs() {
 }
 
 
-void Joint::buildSqueleton(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, glm::vec3 O, glm::vec3 X, glm::vec3 Y, glm::vec3 Z) const {
+void Joint::buildSkeleton(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, glm::vec3 O, glm::vec3 X, glm::vec3 Y, glm::vec3 Z) const {
 
     glm::mat4 res = glm::mat4(1.);
     glm::mat4 rotX = glm::mat4(1.);
@@ -248,7 +248,7 @@ void Joint::buildSqueleton(std::vector<SimpleVertex> &vertices, std::vector<uint
         vertices.push_back(origin);
         indices.push_back(vertices.size() - 1);
         indices.push_back(vertices.size());
-        child->buildSqueleton(vertices, indices, origin, nX, nY, nZ);
+        child->buildSkeleton(vertices, indices, origin, nX, nY, nZ);
     }
     if (_children.empty()) {
         vertices.push_back(origin);
@@ -259,7 +259,7 @@ Joint::Joint()
     : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0)
 {}
 
-void Joint::buildSqueletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform) const {
+void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform) const {
     glm::mat4 childTransform = glm::mat4(1.);
     for (auto &curve: _dofs) {
         if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
@@ -277,7 +277,7 @@ void Joint::buildSqueletonMatrices(vector<SimpleVertex> &vertices, vector<uint32
         vertices.emplace_back(glm::vec3(childTransform*glm::vec4(0., 0., 0., 1.)));
         indices.push_back(vertices.size() - 1);
         indices.push_back(vertices.size());
-        child->buildSqueletonMatrices(vertices, indices, childTransform);
+        child->buildSkeletonMatrices(vertices, indices, childTransform);
     }
     if (_children.empty()) {
         vertices.emplace_back(glm::vec3(childTransform*glm::vec4(0., 0., 0., 1.)));

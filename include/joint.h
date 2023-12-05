@@ -54,8 +54,8 @@ public :
     void parseCurveKeyframes(std::ifstream &inputfile);
     void parseJoint(std::ifstream &inputfile);
 
-    void buildSqueleton(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, glm::vec3 O, glm::vec3 X, glm::vec3 Y, glm::vec3 Z) const;
-    void buildSqueletonMatrices(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, const glm::mat4 &transform) const;
+    void buildSkeleton(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, glm::vec3 O, glm::vec3 X, glm::vec3 Y, glm::vec3 Z) const;
+    void buildSkeletonMatrices(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, const glm::mat4 &transform) const;
 
 	// Create from data :
 	static Joint* create(std::string name, double offX, double offY, double offZ, Joint* parent) {
