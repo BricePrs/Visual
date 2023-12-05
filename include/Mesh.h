@@ -17,6 +17,8 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include<Scene.h>
 #include "Drawable.h"
+#include "Texture.h"
+#include "Collider.h"
 
 struct SimpleVertex {
     glm::vec3 position;
@@ -30,6 +32,21 @@ struct SimpleColorVertex{
     glm::vec3 color;
 
     SimpleColorVertex(glm::vec3 pos, glm::vec3 col) : position(pos), color(col) {}
+};
+
+struct SimpleUvVertex{
+    glm::vec3 position;
+    glm::vec2 uv;
+
+    SimpleUvVertex(glm::vec3 pos, glm::vec2 uv) : position(pos), uv(uv) {}
+};
+
+
+struct SimpleNormalVertex{
+    glm::vec3 position;
+    glm::vec3 normal;
+
+    SimpleNormalVertex(glm::vec3 pos, glm::vec3 normal) : position(pos), normal(normal) {}
 };
 
 
@@ -82,29 +99,37 @@ template <class TVertex>
 class Mesh : public InteractiveObject {
 public:
 
-    Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices, bool interactive);
+    Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive);
 
-    Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices) : Mesh(vertices, indices, false) {}
+    Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices) : Mesh(vertices, indices, false) {}
     Mesh() : Mesh(std::vector<TVertex>(), std::vector<uint32_t>(), false) {}
 
     void Draw(const PerspectiveCamera &camera) override;
 
-    void ChangeMeshVertexData(std::vector<TVertex> vertices);
+    void ChangeVertices(std::vector<TVertex> &vertices);
+
+    void UpdateVerticesData();
 
     void Translate(glm::vec3 x);
     void Rotate(glm::vec3 x);
 
-    glm::vec3 GetPosition();
+    glm::vec3 GetPosition() const;
     void SetPosition(glm::vec3 x);
     void SetRotation(glm::vec3 x);
     void SetScale(glm::vec3 s);
     void SetColor(glm::vec3 color);
     void SetPrimitiveMode(GLenum mode);
     void SetDrawMode(GLenum mode);
+    void SetTexture(Texture texture);
 
     void OnHover() override;
     void OnHoverQuit() override;
     void OnClick() override;
+
+    static Mesh LoadFromPLY(const std::string &fileName);
+
+    void RecomputeVerticesAttributes();
+
 
 private:
 
@@ -120,7 +145,11 @@ private:
     glm::quat mOrientation;
     glm::vec3 mScale = glm::vec3(1.);
 
-    uint32_t indicesCount;
+    std::optional<Texture> mTexture;
+
+    uint32_t mIndicesCount;
+    std::vector<TVertex> mVertices;
+    std::vector<glm::uint32_t> mIndices;
 
     GLuint mVao;
     GLuint mVbo;
@@ -129,6 +158,8 @@ private:
     Shader mProgram;
     GLenum mPrimitiveMode = GL_TRIANGLES;
     GLenum mDrawMode = GL_FILL;
+
+    bool mRequestUpdateGPU = false;
 };
 
 
@@ -137,6 +168,8 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName);
 
 template class Mesh<SimpleVertex>;
 template class Mesh<SimpleColorVertex>;
+template class Mesh<SimpleUvVertex>;
+template class Mesh<SimpleNormalVertex>;
 
 
 class Tube : public Mesh<SimpleVertex> {
@@ -154,11 +187,17 @@ private:
     uint32_t mResolution;
 };
 
-class Sphere : public Mesh<SimpleVertex> {
+class Sphere : public Mesh<SimpleVertex>, public Collider {
 public:
 
     Sphere(double radius, uint32_t resolution, bool interactive);
     Sphere(double radius, uint32_t resolution);
+
+    bool Intersect(glm::vec3 pt) const override;
+    bool Intersect(glm::vec3 LowerAABB, glm::vec3 UpperAABB) const;
+    glm::vec3 ShortestSurfacePoint(glm::vec3 pt) const override;
+    glm::vec3 ComputeCollisionForce(glm::vec3 pt) const override;
+    glm::vec4 GetSphere() const override;
 
 private:
 
@@ -169,10 +208,10 @@ private:
     uint32_t mResolution;
 };
 
-class Grid : public Drawable {
+class GraphGrid : public Drawable {
 public:
 
-    Grid(uint16_t resolution, double scale);
+    GraphGrid(uint16_t resolution, double scale);
 
     void Draw(const PerspectiveCamera &camera);
 
@@ -187,6 +226,7 @@ public:
     WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color);
 
     void Draw(const PerspectiveCamera &camera) override;
+    void UpdateBox(glm::vec3 center, glm::vec3 sides);
 
 private:
 
@@ -245,6 +285,25 @@ private:
         float t2 = (glm::dot(oo, r2)-glm::dot(oo, r1)*glm::dot(r1, r2))/(1.-glm::dot(r1, r2)*glm::dot(r1, r2));
         return t2;
     }
+};
+
+class Quad : public Mesh<SimpleUvVertex> {
+public:
+
+    Quad() : Mesh(ConstructVertices(), ConstructIndices()) {}
+
+private:
+    static std::vector<SimpleUvVertex> ConstructVertices();
+    static std::vector<uint32_t> ConstructIndices();
+
+
+    inline static const std::vector<SimpleUvVertex> VERTICES = {
+            {{-.5, -.5, 0.}, {0, 0}},
+            {{.5, -.5, 0.}, {1, 0}},
+            {{.5, .5, 0.}, {1, 1}},
+            {{-.5, .5, 0.}, {0, 1}}
+    };
+    inline static const std::vector<uint32_t> INDICES = {0, 1, 2, 0, 2, 3};
 };
 
 

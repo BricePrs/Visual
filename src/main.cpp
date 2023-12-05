@@ -60,7 +60,7 @@ int main() {
 
     double dt = 0.0005;
     auto Pendulum2 = DoublePendulum({0., 0.0}, 3.141592*0.9, -3.141592*0.1, 2., 1., dt);
-    auto grid = Grid(100, 1);
+    auto grid = GraphGrid(100, 1);
 
     auto ps = ParticleSystem(glm::vec3(10., 0., 0.), glm::vec3(3., 2., 4.), 0.4, 100);
     auto arrowx = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(1., 0., 0.)*0.6f, glm::vec3(1., 0., 0.));
@@ -119,7 +119,7 @@ int main() {
         rootJoint->animateLerp(frameNumber, framePercent);
         squeletonVertices.clear();
         rootJoint->buildSqueletonMatrices(squeletonVertices, squeletonIndices, glm::mat4(1.));
-        squeletonMesh.ChangeMeshVertexData(squeletonVertices);
+        squeletonMesh.ChangeVertices(squeletonVertices);
 
         world.Draw(inputManager.GetCamera());
 

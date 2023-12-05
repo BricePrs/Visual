@@ -6,8 +6,17 @@
 #include <GlobalVar.h>
 #include <cstring>
 #include <fstream>
+#include <happly/happly.h>
 
 #include "Mesh.h"
+
+template<class TVertex>
+Mesh<TVertex> Mesh<TVertex>::LoadFromPLY(const std::string &fileName) {
+    auto parsedData = happly::PLYData(fileName);
+    std::vector<std::array<double, 3>> vPos = parsedData.getVertexPositions();
+    std::vector<std::vector<size_t>> fInd = parsedData.getFaceIndices<size_t>();
+    return {{}, {}};
+}
 
 template<class TVertex>
 void Mesh<TVertex>::OnClick() {
@@ -36,9 +45,10 @@ void Mesh<TVertex>::SetDrawMode(GLenum mode) {
 }
 
 template <class TVertex>
-Mesh<TVertex>::Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices, bool interactive)
+Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive)
         :   InteractiveObject(interactive),
-        mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.)
+            mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.),
+            mVertices(vertices), mIndices(indices)
         , mIsHovered(false), mIsSelected(false)
 {
 
@@ -58,19 +68,25 @@ Mesh<TVertex>::Mesh(std::vector<TVertex> vertices, std::vector<uint32_t> indices
 
     SelectShaderProgram();
 
-    indicesCount = indices.size();
+    mIndicesCount = indices.size();
 }
 
 template <class TVertex>
-void Mesh<TVertex>::ChangeMeshVertexData(std::vector<TVertex> vertices) {
+void Mesh<TVertex>::ChangeVertices(std::vector<TVertex> &vertices) {
+    mRequestUpdateGPU = true;
+    mVertices = vertices;
+}
+
+template <class TVertex>
+void Mesh<TVertex>::UpdateVerticesData() {
     glBindVertexArray(mVao);
     glBindBuffer(GL_ARRAY_BUFFER, mVbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(TVertex), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mVertices.size()*sizeof(TVertex), mVertices.data(), GL_STATIC_DRAW);
 
     void* bufferData = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
     if (bufferData != nullptr) {
-        std::memcpy(bufferData, vertices.data(), vertices.size()*sizeof(TVertex));
+        std::memcpy(bufferData, mVertices.data(), mVertices.size()*sizeof(TVertex));
         glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 
@@ -83,6 +99,10 @@ void Mesh<TVertex>::SelectShaderProgram() {
         mProgram = {"default.vsh", "default.fsh"};
     } else if constexpr (std::is_same<TVertex, SimpleColorVertex>::value) {
         mProgram = {"defaultVertexColor.vsh", "defaultVertexColor.fsh"};
+    } else if constexpr (std::is_same<TVertex, SimpleUvVertex>::value) {
+        mProgram = {"default_texture.vsh", "default_texture.fsh"};
+    } else if constexpr (std::is_same<TVertex, SimpleNormalVertex>::value) {
+        mProgram = {"defaultVertexNormal.vsh", "defaultVertexNormal.fsh"};
     } else {
         // Do nothing
     }
@@ -97,11 +117,39 @@ void Mesh<TVertex>::SetVaoAttrib() {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleColorVertex), (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleColorVertex), (void *)sizeof(SimpleColorVertex::position));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleColorVertex), (void *)offsetof(SimpleColorVertex, color));
+    } else if constexpr (std::is_same<TVertex, SimpleUvVertex>::value) {
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleUvVertex), (void *)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleUvVertex), (void *)offsetof(SimpleUvVertex, uv));
+    } else if constexpr (std::is_same<TVertex, SimpleNormalVertex>::value) {
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleNormalVertex), (void *)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleNormalVertex), (void *)offsetof(SimpleNormalVertex, normal));
     } else {
         // Do nothing
     }
 }
+
+template<>
+void Mesh<SimpleNormalVertex>::RecomputeVerticesAttributes() {
+    for (auto &vertex: mVertices) {
+        vertex.normal = glm::vec3(0.);
+    }
+    for (auto index = mIndices.begin(); index < mIndices.end(); index+=3) {
+        auto n = glm::vec3(glm::normalize(glm::cross(glm::vec3(mVertices[index[1]].position-mVertices[index[0]].position), glm::vec3(mVertices[index[2]].position-mVertices[index[0]].position))));
+        mVertices[index[0]].normal += n;
+        mVertices[index[1]].normal += n;
+        mVertices[index[2]].normal += n;
+    }
+    for (auto &vertex: mVertices) {
+        vertex.normal = glm::normalize(vertex.normal);
+    }
+    mRequestUpdateGPU = true;
+}
+
 
 Mesh<SimpleVertex> ParseOFF(std::string fileName) {
     std::vector<SimpleVertex> vertices;
@@ -159,6 +207,11 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName) {
 template <class TVertex>
 void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
 
+    if (mRequestUpdateGPU) {
+        UpdateVerticesData();
+        mRequestUpdateGPU = false;
+    }
+
     InteractiveObject::Draw(camera);
 
     glPolygonMode(GL_FRONT_AND_BACK, mDrawMode);
@@ -182,14 +235,25 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     }
     mProgram.setVec3("objectColor",mColor);
 
+    mProgram.setInt("objectTexture", 0);
+
+    if (mTexture.has_value()) {
+        mTexture.value().AssignToLocation(0);
+    }
+
     glBindVertexArray(mVao);
-    glDrawElements(mPrimitiveMode, indicesCount, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(mPrimitiveMode, mIndicesCount, GL_UNSIGNED_INT, nullptr);
 
 }
 
 template<class TVertex>
-glm::vec3 Mesh<TVertex>::GetPosition() {
+glm::vec3 Mesh<TVertex>::GetPosition() const  {
     return mPosition;
+}
+
+template<class TVertex>
+void Mesh<TVertex>::SetTexture(Texture texture) {
+    mTexture = texture;
 }
 
 
@@ -253,6 +317,31 @@ Tube::Tube(double radius, double length, uint32_t resolution)
 
 }
 
+bool Sphere::Intersect(glm::vec3 pt) const {
+    auto a = pt-GetPosition();
+    return glm::dot(a, a)<mRadius*mRadius;
+}
+
+bool Sphere::Intersect(glm::vec3 LowerAABB, glm::vec3 UpperAABB) const {
+    glm::vec3 middleAABB = (LowerAABB + UpperAABB) * .5f;
+    glm::vec3 radiusAABB = UpperAABB-middleAABB;
+    glm::vec3 boxPointVec = glm::abs(middleAABB - GetPosition());
+    glm::vec3 boxPointInter = glm::min(radiusAABB, boxPointVec);
+    return glm::length(boxPointVec-boxPointInter) < mRadius;
+}
+
+glm::vec3 Sphere::ShortestSurfacePoint(glm::vec3 pt) const  {
+    return ((float)mRadius)*glm::normalize(pt-GetPosition())+GetPosition()-pt;
+}
+
+glm::vec3 Sphere::ComputeCollisionForce(glm::vec3 pt) const {
+    auto a = pt-GetPosition();
+    float sideDistSq = glm::dot(a, a)-mRadius*mRadius;
+    if (sideDistSq < 0.) {
+        return glm::normalize(a)*std::sqrt(-sideDistSq);
+    }
+    return glm::vec3(0.f);
+}
 
 std::vector<uint32_t> Sphere::ConstructIndices(uint32_t resolution) {
     std::vector<uint32_t> indices;
@@ -263,8 +352,8 @@ std::vector<uint32_t> Sphere::ConstructIndices(uint32_t resolution) {
             indices.emplace_back((i-1)*resolution+(j+1)%resolution);
             indices.emplace_back((i-1)*resolution+j);
 
-            indices.emplace_back(i*resolution+j);
             indices.emplace_back((i-1)*resolution+(j+1)%resolution);
+            indices.emplace_back(i*resolution+j);
             indices.emplace_back(i*resolution+(j+1)%resolution);
         }
     }
@@ -295,7 +384,11 @@ Sphere::Sphere(double radius, uint32_t resolution)
         : Sphere(radius, resolution, true)
 {}
 
-Grid::Grid(uint16_t resolution, double scale) {
+glm::vec4 Sphere::GetSphere() const {
+    return glm::vec4(GetPosition(), mRadius);
+}
+
+GraphGrid::GraphGrid(uint16_t resolution, double scale) {
     double halfSize = scale*resolution*.5;
     std::vector<SimpleVertex>   gridVertices;
     std::vector<uint32_t>       gridIndices;
@@ -339,7 +432,7 @@ Grid::Grid(uint16_t resolution, double scale) {
     mReferentialLines.SetPrimitiveMode(GL_LINES);
 }
 
-void Grid::Draw(const PerspectiveCamera &camera) {
+void GraphGrid::Draw(const PerspectiveCamera &camera) {
     mScaleGrid.Draw(camera);
     mReferentialLines.Draw(camera);
 }
@@ -371,17 +464,17 @@ void InteractiveObject::Draw(const PerspectiveCamera &camera) {
 
 WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) {
     std::vector<SimpleVertex> vertices = {
-            center - sides,                                   // 0
+            glm::vec3(-1, -1, -1),                                   // 0
 
-            center + sides*glm::vec3(-1, -1, 1),    // 1
-            center + sides*glm::vec3(-1, 1, -1),    // 2
-            center + sides*glm::vec3(1, -1, -1),    // 3
+            glm::vec3(-1, -1, 1),    // 1
+            glm::vec3(-1, 1, -1),    // 2
+            glm::vec3(1, -1, -1),    // 3
 
-            center + sides*glm::vec3(-1, 1, 1),     // 4
-            center + sides*glm::vec3(1, -1, 1),     // 5
-            center + sides*glm::vec3(1, 1, -1),     // 6
+            glm::vec3(-1, 1, 1),     // 4
+            glm::vec3(1, -1, 1),     // 5
+            glm::vec3(1, 1, -1),     // 6
 
-            center + sides,                                   // 7
+            glm::vec3(1, 1, 1),                                   // 7
     };
     std::vector<uint32_t> indices = {
             0, 1, 0, 2, 0, 3,
@@ -391,15 +484,22 @@ WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) {
     mMesh = {vertices, indices, false};
     mMesh.SetPrimitiveMode(GL_LINES);
     mMesh.SetColor(color);
+    UpdateBox(center, sides);
 }
+
+void WireframeBox::UpdateBox(glm::vec3 center, glm::vec3 sides) {
+    mMesh.SetPosition(center);
+    mMesh.SetScale(sides);
+}
+
 
 void WireframeBox::Draw(const PerspectiveCamera &camera) {
     mMesh.Draw(camera);
 }
 
 Arrow3D::Arrow3D(glm::vec3 base, glm::vec3 direction, glm::vec3 color)
-    : Mesh<SimpleVertex>(ConstructVertices(direction), ConstructIndices(), true), mColor(color),
-    mDirection(direction), mOrigin(base)
+        : Mesh<SimpleVertex>(ConstructVertices(direction), ConstructIndices(), true), mColor(color),
+          mDirection(direction), mOrigin(base)
 {
     SetColor(color);
     SetPosition(mOrigin);
@@ -463,3 +563,10 @@ std::vector<uint32_t> Arrow3D::ConstructIndices() {
 }
 
 
+std::vector<SimpleUvVertex> Quad::ConstructVertices() {
+    return VERTICES;
+}
+
+std::vector<uint32_t> Quad::ConstructIndices() {
+    return INDICES;
+}
