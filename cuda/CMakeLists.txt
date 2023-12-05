@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 
 if(NOT DEFINED ${CMAKE_CUDA_ARCHITECTURES})
-    set(CMAKE_CUDA_ARCHITECTURES 52 61 75)
+    set(CMAKE_CUDA_ARCHITECTURES 86)
 endif()
 message(STATUS "CUDA architectures set to ${CMAKE_CUDA_ARCHITECTURES}")
 

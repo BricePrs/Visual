@@ -28,7 +28,6 @@ public:
     static RayTracingMesh* LoadFromPLY(const std::string &fileName);
     static std::vector<glm::vec4> ComputeNormals(const std::vector<glm::vec4> &vertices,
                                                  const std::vector<Triangle> &indices);
-
 private:
 
     GLuint mVertexBuffer;
@@ -83,6 +82,7 @@ private:
     glm::vec3 mSPLightPosition = glm::vec3(10.f);
     glm::vec3 mSPEta3dReal = glm::vec3(1.5f);
     glm::vec3 mSPEta3dImag = glm::vec3(0.f);
+    float mGlassIndex = 1.5;
 
 };
 

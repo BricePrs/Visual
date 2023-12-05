@@ -47,7 +47,8 @@ void Mesh<TVertex>::SetDrawMode(GLenum mode) {
 template <class TVertex>
 Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive)
         :   InteractiveObject(interactive),
-        mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.)
+        mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.),
+        mVertices(vertices), mIndices(indices)
         , mIsHovered(false), mIsSelected(false)
 {
 
@@ -67,19 +68,25 @@ Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint
 
     SelectShaderProgram();
 
-    indicesCount = indices.size();
+    mIndicesCount = indices.size();
 }
 
 template <class TVertex>
-void Mesh<TVertex>::ChangeMeshVertexData(std::vector<TVertex> vertices) {
+void Mesh<TVertex>::ChangeVertices(std::vector<TVertex> &vertices) {
+    mRequestUpdateGPU = true;
+    mVertices = vertices;
+}
+
+template <class TVertex>
+void Mesh<TVertex>::UpdateVerticesData() {
     glBindVertexArray(mVao);
     glBindBuffer(GL_ARRAY_BUFFER, mVbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(TVertex), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mVertices.size()*sizeof(TVertex), mVertices.data(), GL_STATIC_DRAW);
 
     void* bufferData = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
     if (bufferData != nullptr) {
-        std::memcpy(bufferData, vertices.data(), vertices.size()*sizeof(TVertex));
+        std::memcpy(bufferData, mVertices.data(), mVertices.size()*sizeof(TVertex));
         glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 
@@ -94,6 +101,8 @@ void Mesh<TVertex>::SelectShaderProgram() {
         mProgram = {"defaultVertexColor.vsh", "defaultVertexColor.fsh"};
     } else if constexpr (std::is_same<TVertex, SimpleUvVertex>::value) {
         mProgram = {"default_texture.vsh", "default_texture.fsh"};
+    } else if constexpr (std::is_same<TVertex, SimpleNormalVertex>::value) {
+        mProgram = {"defaultVertexNormal.vsh", "defaultVertexNormal.fsh"};
     } else {
         // Do nothing
     }
@@ -114,10 +123,33 @@ void Mesh<TVertex>::SetVaoAttrib() {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleUvVertex), (void *)0);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleUvVertex), (void *)offsetof(SimpleUvVertex, uv));
+    } else if constexpr (std::is_same<TVertex, SimpleNormalVertex>::value) {
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleNormalVertex), (void *)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleNormalVertex), (void *)offsetof(SimpleNormalVertex, normal));
     } else {
         // Do nothing
     }
 }
+
+template<>
+void Mesh<SimpleNormalVertex>::RecomputeVerticesAttributes() {
+    for (auto &vertex: mVertices) {
+        vertex.normal = glm::vec3(0.);
+    }
+    for (auto index = mIndices.begin(); index < mIndices.end(); index+=3) {
+        auto n = glm::vec3(glm::normalize(glm::cross(glm::vec3(mVertices[index[1]].position-mVertices[index[0]].position), glm::vec3(mVertices[index[2]].position-mVertices[index[0]].position))));
+        mVertices[index[0]].normal += n;
+        mVertices[index[1]].normal += n;
+        mVertices[index[2]].normal += n;
+    }
+    for (auto &vertex: mVertices) {
+        vertex.normal = glm::normalize(vertex.normal);
+    }
+    mRequestUpdateGPU = true;
+}
+
 
 Mesh<SimpleVertex> ParseOFF(std::string fileName) {
     std::vector<SimpleVertex> vertices;
@@ -175,6 +207,11 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName) {
 template <class TVertex>
 void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
 
+    if (mRequestUpdateGPU) {
+        UpdateVerticesData();
+        mRequestUpdateGPU = false;
+    }
+
     InteractiveObject::Draw(camera);
 
     glPolygonMode(GL_FRONT_AND_BACK, mDrawMode);
@@ -205,7 +242,7 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     }
 
     glBindVertexArray(mVao);
-    glDrawElements(mPrimitiveMode, indicesCount, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(mPrimitiveMode, mIndicesCount, GL_UNSIGNED_INT, nullptr);
 
 }
 
@@ -297,6 +334,15 @@ glm::vec3 Sphere::ShortestSurfacePoint(glm::vec3 pt) const  {
     return ((float)mRadius)*glm::normalize(pt-GetPosition())+GetPosition()-pt;
 }
 
+glm::vec3 Sphere::ComputeCollisionForce(glm::vec3 pt) const {
+    auto a = pt-GetPosition();
+    float sideDistSq = glm::dot(a, a)-mRadius*mRadius;
+    if (sideDistSq < 0.) {
+        return glm::normalize(a)*std::sqrt(-sideDistSq);
+    }
+    return glm::vec3(0.f);
+}
+
 std::vector<uint32_t> Sphere::ConstructIndices(uint32_t resolution) {
     std::vector<uint32_t> indices;
 
@@ -337,6 +383,10 @@ Sphere::Sphere(double radius, uint32_t resolution, bool interactive)
 Sphere::Sphere(double radius, uint32_t resolution)
         : Sphere(radius, resolution, true)
 {}
+
+glm::vec4 Sphere::GetSphere() const {
+    return glm::vec4(GetPosition(), mRadius);
+}
 
 GraphGrid::GraphGrid(uint16_t resolution, double scale) {
     double halfSize = scale*resolution*.5;

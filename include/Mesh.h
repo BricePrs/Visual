@@ -42,6 +42,14 @@ struct SimpleUvVertex{
 };
 
 
+struct SimpleNormalVertex{
+    glm::vec3 position;
+    glm::vec3 normal;
+
+    SimpleNormalVertex(glm::vec3 pos, glm::vec3 normal) : position(pos), normal(normal) {}
+};
+
+
 
 class InteractiveObject : public Drawable {
 public:
@@ -98,7 +106,9 @@ public:
 
     void Draw(const PerspectiveCamera &camera) override;
 
-    void ChangeMeshVertexData(std::vector<TVertex> vertices);
+    void ChangeVertices(std::vector<TVertex> &vertices);
+
+    void UpdateVerticesData();
 
     void Translate(glm::vec3 x);
     void Rotate(glm::vec3 x);
@@ -118,6 +128,9 @@ public:
 
     static Mesh LoadFromPLY(const std::string &fileName);
 
+    void RecomputeVerticesAttributes();
+
+
 private:
 
     void SetVaoAttrib();
@@ -134,7 +147,9 @@ private:
 
     std::optional<Texture> mTexture;
 
-    uint32_t indicesCount;
+    uint32_t mIndicesCount;
+    std::vector<TVertex> mVertices;
+    std::vector<glm::uint32_t> mIndices;
 
     GLuint mVao;
     GLuint mVbo;
@@ -143,7 +158,10 @@ private:
     Shader mProgram;
     GLenum mPrimitiveMode = GL_TRIANGLES;
     GLenum mDrawMode = GL_FILL;
+
+    bool mRequestUpdateGPU = false;
 };
+
 
 Mesh<SimpleVertex> ParseOFF(std::string fileName);
 
@@ -151,6 +169,7 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName);
 template class Mesh<SimpleVertex>;
 template class Mesh<SimpleColorVertex>;
 template class Mesh<SimpleUvVertex>;
+template class Mesh<SimpleNormalVertex>;
 
 
 class Tube : public Mesh<SimpleVertex> {
@@ -177,6 +196,8 @@ public:
     bool Intersect(glm::vec3 pt) const override;
     bool Intersect(glm::vec3 LowerAABB, glm::vec3 UpperAABB) const;
     glm::vec3 ShortestSurfacePoint(glm::vec3 pt) const override;
+    glm::vec3 ComputeCollisionForce(glm::vec3 pt) const override;
+    glm::vec4 GetSphere() const override;
 
 private:
 

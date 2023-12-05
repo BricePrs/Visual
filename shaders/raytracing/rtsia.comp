@@ -21,6 +21,7 @@ uniform bool enableEnvMap;
 uniform float tileScale;
 uniform bool resetAccumulation;
 uniform int accumulationCount;
+uniform float glassIndex;
 
 #define MAX_RAY_BOUNCES     5
 #define MAX_SCENE_BOUNDS    10.0
@@ -142,6 +143,38 @@ bool intersectBoundingBox(vec4 origin, vec4 dir, vec4 bbmin, vec4 bbmax, out flo
     return tNear <= tFar;
 }
 
+bool intersectTriangle2(vec4 origin, vec4 dir, int ptr, out vec4 dist) {
+
+    // vertices from data:
+    vec4 v0 = vertices[indices[ptr]];
+    vec4 v1 = vertices[indices[ptr + 1]];
+    vec4 v2 = vertices[indices[ptr + 2]];
+
+    vec3 v0v1 = (v1 - v0).xyz;
+    vec3 v0v2 = (v2 - v0).xyz;
+    vec3 pvec = cross(dir.xyz, v0v2.xyz);
+    float det = dot(v0v1, pvec);
+
+    // if the determinant is negative, the triangle is 'back facing'
+    //if (det < kEpsilon) return false;
+    // ray and triangle are parallel if det is close to 0
+    if (abs(det) < EPS) return false;
+    float invDet = 1 / det;
+
+    vec3 tvec = origin.xyz - v0.xyz;
+    dist.y = dot(tvec, pvec) * invDet;
+    if (dist.y < 0 || dist.y > 1) return false;
+
+    vec3 qvec = cross(tvec, v0v1);
+    dist.z = dot(dir.xyz, qvec) * invDet;
+    if (dist.z < 0 || dist.y + dist.z > 1) return false;
+
+    dist.w = 1.-dist.y-dist.z;
+
+    dist.x = dot(v0v2, qvec) * invDet;
+    return (dist.x > EPS);
+}
+
 // intersect ray (origin, dir) with triangle defined by ptr (number inside indexed face set)
 // returns a boolean, plus the "t" of hitinfo structure (Intersection distance, barycentric coordinates)
 bool intersectTriangle(vec4 origin, vec4 dir, int ptr, out vec4 dist)
@@ -225,7 +258,7 @@ bool intersectBVHLeaf(BVHNode node, vec4 origin, vec4 dir, inout hitinfo_t h)
     for (int i = 0; i < node.nbTriangles; ++i) {
         int vptr = 3 * (node.index + i);
         vec4 dist;
-        if (intersectTriangle(origin, dir, vptr, dist) && dist.x < h.t.x) {
+        if (intersectTriangle2(origin, dir, vptr, dist) && dist.x < h.t.x) {
             hit = true;
             h.hit_vptr = vptr;
             h.t = dist;
@@ -393,7 +426,7 @@ float real_fresnel(in float cos_th, in float eta) {
     float f_p = (eta_sq*cos_th-c)/(eta_sq*cos_th+c);
     f_p *= f_p;
 
-    return (f_s+f_p)/2.;
+    return clamp((f_s+f_p)/2., EPS, 1.-EPS);
 }
 
 float complex_fresnel(in float cos_th, in vec2 eta) {
@@ -497,7 +530,8 @@ vec4 directIllumination(vec4 color, vec4 p, vec4 n, vec4 v, vec3 l)
 }
 
 
-const int MAX_TRACE = 2;
+const int MAX_TRACE = 8;
+const int MAX_REFLECT = 8;
 
 void getLocal(vec4 origin, vec4 dir, hitinfo_t h, out vec4 color, out vec4 p, out vec4 n)
 {
@@ -528,22 +562,25 @@ struct trace_state_t
 
 vec4 trace(vec4 origin, vec4 dir)
 {
-    // These variables are for TP2
     trace_state_t stack[MAX_TRACE + 1];
     bool fallback[MAX_TRACE + 1];
     int sp = 0;
+    int reflectCount = 0;
     vec4 lastIntersection = origin;
     vec4 lastDirection = dir;
     stack[0].color = vec4(0.);
+
     if (enableEnvMap) {
         stack[0].color = texture(envMap, vec2(atan(dir.z, dir.x)/2./3.1416, dir.y*.5+.5)); // Default to black if no intersection for the first ray
     }
+
     bool hasHit = false;
+    bool isInsideObject = false;
+    int surface = 0;
 
     // Forward tracing
-    for (; sp <= MAX_TRACE; ++sp) {
+    for (; sp <= MAX_TRACE, reflectCount < MAX_REFLECT; ++sp) {
         hasHit = firstIntersection(lastIntersection, lastDirection, stack[sp].h);
-
         if (hasHit) {
             getLocal(lastIntersection, lastDirection, stack[sp].h, stack[sp].localColor, stack[sp].hit, stack[sp].N);
         } else {
@@ -556,32 +593,60 @@ vec4 trace(vec4 origin, vec4 dir)
         }
         stack[sp].origin = lastIntersection;
         stack[sp].dir = lastDirection;
-        lastIntersection = stack[sp].hit + .001 * stack[sp].N;
-        lastDirection = reflect(lastDirection, stack[sp].N);
+
+        float s = 1.;
+        float n = 1./glassIndex;
+        if (isInsideObject) {
+            n = 1./n;
+            s = -1.;
+        }
+        float cos_th = max(0.,s*dot(stack[sp].N, -stack[sp].dir));
+        float rd = random(vec4(dir.xyz, float(accumulationCount*0.167)));
+
+        vec3 ref = refract(lastDirection.xyz, s*stack[sp].N.xyz, n);
+        if (transparent && length(ref) > EPS && (stack[sp].h.hit_vptr != -1) && (rd >= real_fresnel(cos_th, 1./n))) {
+            lastDirection.xyz = normalize(ref);
+
+            isInsideObject = !isInsideObject;
+            ++surface;
+        } else {
+            lastDirection = reflect(lastDirection, s*stack[sp].N);
+            ++reflectCount;
+        }
+
+        lastIntersection = stack[sp].hit + .001 * lastDirection;
     }
+   //return vec4(vec2(surface*0.1, reflectCount*0.1), 0., 0.);
 
     if (hasHit) {
-        stack[sp-1].color = directIllumination(stack[sp-1].localColor, stack[sp-1].hit, stack[sp-1].N, -stack[sp-1].dir, lightPosition-stack[sp-1].hit.xyz);
+        //stack[sp-1].color = directIllumination(stack[sp-1].localColor, stack[sp-1].hit, stack[sp-1].N, -stack[sp-1].dir, lightPosition-stack[sp-1].hit.xyz);
+        //return directIllumination(stack[sp-1].localColor, stack[sp-1].hit, stack[sp-1].N, -stack[sp-1].dir, lightPosition-stack[sp-1].hit.xyz);
     }
     for (int i = sp-2; i >= 1; --i) {
         float cos_th = max(0.,dot(stack[i].N, -stack[i].dir));
-        stack[i].color = directIllumination(stack[i].localColor, stack[i].hit, stack[i].N, -stack[i].dir, lightPosition-stack[i].hit.xyz)
-        + vec4(fresnel(cos_th, vec2(eta3dReal.x, eta3dImag.x)),
-        fresnel(cos_th, vec2(eta3dReal.y, eta3dImag.y)),
-        fresnel(cos_th, vec2(eta3dReal.z, eta3dImag.z)),
-        1.) * stack[i+1].color;
+        if (stack[i].h.hit_vptr != -1) {
+            stack[i].color = stack[i+1].color;
+        } else {
+            stack[i].color = directIllumination(stack[i].localColor, stack[i].hit, stack[i].N, -stack[i].dir, lightPosition-stack[i].hit.xyz)
+                            + vec4(fresnel(cos_th, vec2(eta3dReal.x, eta3dImag.x)),
+                                   fresnel(cos_th, vec2(eta3dReal.y, eta3dImag.y)),
+                                   fresnel(cos_th, vec2(eta3dReal.z, eta3dImag.z)),
+                                   1.) * stack[i+1].color;
+        }
     }
     if (sp-2 >= 0){
         float cos_th = max(0., dot(stack[0].N, -stack[0].dir));
-        stack[0].color = directIllumination(stack[0].localColor, stack[0].hit, stack[0].N, -stack[0].dir, lightPosition-stack[0].hit.xyz)
-        +
-        vec4(fresnel(cos_th, vec2(eta3dReal.x, eta3dImag.x)),
-        fresnel(cos_th, vec2(eta3dReal.y, eta3dImag.y)),
-        fresnel(cos_th, vec2(eta3dReal.z, eta3dImag.z)),
-        1.) * stack[1].color;
-    }
-    //return vec4(sp*0.2);
 
+        if (stack[0].h.hit_vptr != -1) {
+            stack[0].color = stack[1].color;
+        } else {
+            stack[0].color = directIllumination(stack[0].localColor, stack[0].hit, stack[0].N, -stack[0].dir, lightPosition-stack[0].hit.xyz)
+                    + vec4(fresnel(cos_th, vec2(eta3dReal.x, eta3dImag.x)),
+                           fresnel(cos_th, vec2(eta3dReal.y, eta3dImag.y)),
+                           fresnel(cos_th, vec2(eta3dReal.z, eta3dImag.z)),
+                           1.) * stack[1].color;
+        }
+    }
     return stack[0].color;
 
 
@@ -606,9 +671,8 @@ void main(void) {
 
     // Convert local screen coordinates into world coordinates
     ivec2 pix = ivec2(gl_GlobalInvocationID.xy);
-    vec2 perturb = 1.-vec2(random(vec3(pix.xy, float(accumulationCount*0.135))),
-    random(vec3(pix.xy, float(accumulationCount*0.874))));
-
+    vec2 perturb = .5-vec2(random(vec3(pix.xy, float(accumulationCount*0.135))),
+                              random(vec3(pix.xy, float(accumulationCount*0.874))));
 
 
     vec4 pixVal = imageLoad(framebuffer, pix);
@@ -645,13 +709,13 @@ void main(void) {
     vec4 color = trace(eye, dir);
 
     if (fastGammaCorrection) {
-        color = pow(color, vec4(1./2.2));
+        //color = pow(color, vec4(1./2.2));
     }
     if (isnan(length(color))) {
-        color = vec4(1., 0., 0., 0.);
+        //color = vec4(1., 0., 0., 0.);
     }
 
-    color.a = dot(color.xyz, color.xyz);
+    //color.a = dot(color.xyz, color.xyz);
     vec4 result = (pixVal*float(accumulationCount) + color)/float(accumulationCount+1);
 
     /*vec4 dist;
@@ -672,4 +736,5 @@ void main(void) {
     }*/
 
     imageStore(framebuffer, pix, result);
+
 }

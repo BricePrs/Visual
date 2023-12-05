@@ -44,6 +44,7 @@ void RayTracingCamera::DrawScene(const PerspectiveCamera& camera) {
     mShader.setMat4("persp_inverse", glm::inverse(camera.getProjMatrix()));
     mShader.setVec3("lightPosition", mSPLightPosition);
     mShader.setFloat("blinnPhong", 0.);
+    mShader.setBool("transparent", true);
     mShader.setBool("fastGammaCorrection", true);
     mShader.setFloat("lightIntensity", mSPLightIntensity);
     mShader.setFloat("shininess", mSPShininess);
@@ -54,6 +55,7 @@ void RayTracingCamera::DrawScene(const PerspectiveCamera& camera) {
     mShader.setVec3("eta3dImag", mSPEta3dImag);
     mShader.setInt("colorTexture", 0);
     mShader.setFloat("tileScale", 1.);
+    mShader.setFloat("glassIndex", mGlassIndex);
 
     mShader.setInt("envMap", 1);
     glActiveTexture(GL_TEXTURE1);
@@ -172,6 +174,7 @@ void RayTracingCamera::DrawWindow() {
     shouldReset = shouldReset || ImGui::SliderFloat("Radius", &mSPRadius, 0.0f, 10.0f);
     shouldReset = shouldReset || ImGui::SliderFloat("Light Intensity", &mSPLightIntensity, 0.0f, 5.0f);
     shouldReset = shouldReset || ImGui::SliderFloat("Shininess", &mSPShininess, 0.0f, 200.0f);
+    shouldReset = shouldReset || ImGui::SliderFloat("GlassIndex", &mGlassIndex, 0.0f, 5.0f);
 
 
     ImGui::Text("Accumulated %i frames", mAccumulationCount);

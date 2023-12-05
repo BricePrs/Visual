@@ -50,9 +50,9 @@ int main() {
 
     quad.Translate({0., 10., 15.});
     quad.SetScale(glm::vec3(20.f));
-    PhysicsParam params {-0.01, 0.00, 10.5, 10000.};
-    auto sb = SoftBody2D::Cube(10, 10, 10, params);
-    auto sb1 = SoftBody2D::Rectangle(1, 2, params);
+    PhysicsParam params {-0.0, 0.00};
+    auto sb = SoftBody2D::Cube(10, 10, 10, params, SoftBody2D::Structure);
+    //auto sb = SoftBody2D::Rectangle(10, 20, params);
 
     auto grid = GraphGrid(100, 1);
 
@@ -103,10 +103,12 @@ int main() {
         static auto StartTime = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::high_resolution_clock::now();
 
-        sb.PhysicsStep(0.1, world.GetColliderObjects());
+        sb.PhysicsStep(world.GetColliderObjects());
 
 
         world.Draw(inputManager.GetCamera());
+
+        sb.DrawWindow();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

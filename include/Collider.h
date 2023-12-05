@@ -12,6 +12,8 @@ public:
     [[nodiscard]] virtual bool Intersect(glm::vec3 pt) const = 0;
     [[nodiscard]] virtual bool Intersect(glm::vec3 LowerAABB, glm::vec3 UpperAABB) const = 0;
     [[nodiscard]] virtual glm::vec3 ShortestSurfacePoint(glm::vec3 pt) const = 0;
+    [[nodiscard]] virtual glm::vec3 ComputeCollisionForce(glm::vec3 pt) const = 0;
+    [[nodiscard]] virtual glm::vec4 GetSphere() const = 0;
 };
 
 
