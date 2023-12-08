@@ -54,6 +54,9 @@ public:
     void rotate(double dPitch, double dYaw) override;
 
     void SetEnvMap(const std::string& fileName);
+    void SetGroundTex(const std::string& fileName);
+    void SetSphereTex(const std::string& fileName);
+    void SetSphereNormalMap(const std::string& fileName);
 
     void DrawWindow();
 
@@ -62,6 +65,7 @@ private:
     GLuint mFramebufferId;
     Texture mFramebufferTex;
     Texture mEnvMap;
+    Texture mGroundTex;
 
     ComputeShader mShader;
     RayTracingMesh *mRtMesh;
@@ -75,13 +79,17 @@ private:
     // --- Scene params --- //
     float mSPShininess = 200.;
     float mSPGroundDistance = 1.;
-    float mSPRadius = 1.;
+    float mSPRadius = 10.;
     bool mSPBlinnPhong = false;
     bool mSPEnvMap = true;
+    bool mSPCheckboard = true;
+    bool mSPTransparent = true;
+    bool mSPSphereModel = true;
     float mSPLightIntensity = 1.;
     glm::vec3 mSPLightPosition = glm::vec3(10.f);
-    glm::vec3 mSPEta3dReal = glm::vec3(1.5f);
-    glm::vec3 mSPEta3dImag = glm::vec3(0.f);
+    glm::vec3 mSPEta3dReal = glm::vec3(0.f, 0., 1.);
+    glm::vec3 mSPEta3dImag = glm::vec3(0.f, 0., 0.);
+    glm::vec4 mSPObjectColor = glm::vec4(0.7);
     float mGlassIndex = 1.5;
 
 };

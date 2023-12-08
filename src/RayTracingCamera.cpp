@@ -11,6 +11,41 @@
 #include "imgui/imgui.h"
 
 
+glm::vec3 HSBtoRGB(glm::vec3 hsb) {
+    // Ensure hsb.x is in the range [0, 360)
+    hsb.x = fmod(hsb.x, 1.0f)*360.f;
+    if (hsb.x < 0.0f) {
+        hsb.x += 360.0f;
+    }
+
+    // Ensure hsb.y and hsb.z are in the range [0, 1]
+    hsb.y = glm::clamp(hsb.y, 0.0f, 1.0f);
+
+    float chroma = hsb.z * hsb.y;
+    float huePrime = hsb.x / 60.0f;
+    float x = chroma * (1.0f - glm::abs(fmod(huePrime, 2.0f) - 1.0f));
+
+    glm::vec3 rgb;
+    if (huePrime >= 0.0f && huePrime < 1.0f) {
+        rgb = glm::vec3(chroma, x, 0.0f);
+    } else if (huePrime >= 1.0f && huePrime < 2.0f) {
+        rgb = glm::vec3(x, chroma, 0.0f);
+    } else if (huePrime >= 2.0f && huePrime < 3.0f) {
+        rgb = glm::vec3(0.0f, chroma, x);
+    } else if (huePrime >= 3.0f && huePrime < 4.0f) {
+        rgb = glm::vec3(0.0f, x, chroma);
+    } else if (huePrime >= 4.0f && huePrime < 5.0f) {
+        rgb = glm::vec3(x, 0.0f, chroma);
+    } else { // huePrime >= 5.0f && huePrime < 6.0f
+        rgb = glm::vec3(chroma, 0.0f, x);
+    }
+
+    float m = hsb.z - chroma;
+    rgb += glm::vec3(m);
+
+    return rgb;
+}
+
 RayTracingCamera::RayTracingCamera(double aspect)
     : PerspectiveCamera(aspect),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
 {
@@ -43,16 +78,19 @@ void RayTracingCamera::DrawScene(const PerspectiveCamera& camera) {
     mShader.setMat4("mat_inverse", glm::inverse(camera.getViewMatrix()));
     mShader.setMat4("persp_inverse", glm::inverse(camera.getProjMatrix()));
     mShader.setVec3("lightPosition", mSPLightPosition);
-    mShader.setFloat("blinnPhong", 0.);
-    mShader.setBool("transparent", true);
+    mShader.setFloat("blinnPhong", mSPBlinnPhong);
+    mShader.setBool("transparent", mSPTransparent);
     mShader.setBool("fastGammaCorrection", true);
     mShader.setFloat("lightIntensity", mSPLightIntensity);
     mShader.setFloat("shininess", mSPShininess);
     mShader.setBool("enableEnvMap", mSPEnvMap);
+    mShader.setBool("sphereModel", mSPSphereModel);
+    mShader.setBool("checkBoard", mSPCheckboard);
     mShader.setBool("resetAccumulation", mResetAccumulation);
     mShader.setInt("accumulationCount", static_cast<int32_t>(mAccumulationCount));
-    mShader.setVec3("eta3dReal", mSPEta3dReal);
-    mShader.setVec3("eta3dImag", mSPEta3dImag);
+    mShader.setVec3("eta3dReal", HSBtoRGB(mSPEta3dReal)*mSPEta3dReal.z);
+    mShader.setVec3("eta3dImag", HSBtoRGB(mSPEta3dImag)*mSPEta3dImag.z);
+    mShader.setVec4("ObjectColor", mSPObjectColor);
     mShader.setInt("colorTexture", 0);
     mShader.setFloat("tileScale", 1.);
     mShader.setFloat("glassIndex", mGlassIndex);
@@ -60,6 +98,9 @@ void RayTracingCamera::DrawScene(const PerspectiveCamera& camera) {
     mShader.setInt("envMap", 1);
     glActiveTexture(GL_TEXTURE1);
     mEnvMap.Bind();
+
+    glActiveTexture(GL_TEXTURE0);
+    mGroundTex.Bind();
 
     uint32_t kernelSize = 8;
     uint32_t dispatchGroupX = (CAMERA_RES + kernelSize - 1) / kernelSize;
@@ -156,17 +197,24 @@ void RayTracingCamera::SetEnvMap(const std::string &fileName) {
     mEnvMap = Texture::LoadFromFile(fileName);
 }
 
+void RayTracingCamera::SetGroundTex(const std::string &fileName) {
+    mGroundTex = Texture::LoadFromFile(fileName);
+}
+
 void RayTracingCamera::DrawWindow() {
 
     bool shouldReset = false;
 
     ImGui::Begin("Menu");
 
+    shouldReset = shouldReset || ImGui::Checkbox("Transparent", &mSPTransparent);
     shouldReset = shouldReset || ImGui::Checkbox("Blinn-Phong", &mSPBlinnPhong);
     shouldReset = shouldReset || ImGui::Checkbox("EnvMap", &mSPEnvMap);
-
-    shouldReset = shouldReset || ImGui::ColorEdit3("Real eta", glm::value_ptr(mSPEta3dReal));
-    shouldReset = shouldReset || ImGui::ColorEdit3("Imag eta", glm::value_ptr(mSPEta3dImag));
+    shouldReset = shouldReset || ImGui::Checkbox("CkeckBoard", &mSPCheckboard);
+    shouldReset = shouldReset || ImGui::Checkbox("SphereModel", &mSPSphereModel);
+    shouldReset = shouldReset || ImGui::SliderFloat3("HSB Real eta", glm::value_ptr(mSPEta3dReal), 1., 3.);
+    shouldReset = shouldReset || ImGui::SliderFloat3("HSB Imag eta", glm::value_ptr(mSPEta3dImag), 0., 3.);
+    shouldReset = shouldReset || ImGui::ColorEdit3("Object Color", glm::value_ptr(mSPObjectColor));
 
     shouldReset = shouldReset || ImGui::ColorEdit3("Light pos", glm::value_ptr(mSPLightPosition));
 
@@ -174,7 +222,7 @@ void RayTracingCamera::DrawWindow() {
     shouldReset = shouldReset || ImGui::SliderFloat("Radius", &mSPRadius, 0.0f, 10.0f);
     shouldReset = shouldReset || ImGui::SliderFloat("Light Intensity", &mSPLightIntensity, 0.0f, 5.0f);
     shouldReset = shouldReset || ImGui::SliderFloat("Shininess", &mSPShininess, 0.0f, 200.0f);
-    shouldReset = shouldReset || ImGui::SliderFloat("GlassIndex", &mGlassIndex, 0.0f, 5.0f);
+    shouldReset = shouldReset || ImGui::SliderFloat("GlassIndex", &mGlassIndex, 1.0f, 3.0f);
 
 
     ImGui::Text("Accumulated %i frames", mAccumulationCount);

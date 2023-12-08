@@ -3,7 +3,7 @@
 layout(binding = 2, rgba32f) uniform image2D framebuffer;
 
 uniform sampler2D envMap;
-uniform sampler2D colorTexture;
+uniform sampler2D groundTexture;
 uniform mat4 mat_inverse;
 uniform mat4 persp_inverse;
 uniform float lightIntensity;
@@ -13,6 +13,7 @@ uniform bool fastGammaCorrection;
 uniform bool transparent;
 uniform float shininess;
 uniform vec2 eta;
+uniform vec4 ObjectColor;
 uniform vec3 eta3dReal;
 uniform vec3 eta3dImag;
 uniform float radius;
@@ -20,6 +21,8 @@ uniform float groundDistance;
 uniform bool enableEnvMap;
 uniform float tileScale;
 uniform bool resetAccumulation;
+uniform bool sphereModel;
+uniform bool checkBoard;
 uniform int accumulationCount;
 uniform float glassIndex;
 
@@ -228,12 +231,13 @@ bool intersectGround(vec4 origin, vec4 dir, out vec4 dist)
 
 vec4 interpolateColor(hitinfo_t h)
 {
+    return pow(ObjectColor, vec4(2.2));
     if (colors.length() > 0) {
         vec4 c0 = colors[indices[h.hit_vptr]];
         vec4 c1 = colors[indices[h.hit_vptr + 1]];
         vec4 c2 = colors[indices[h.hit_vptr + 2]];
-        return (h.t.w * c0 + h.t.y * c1 + h.t.z * c2);
-    } else return vec4(0.7, 0.7, 0.7, 1.0);
+        return pow(h.t.w * c0 + h.t.y * c1 + h.t.z * c2, vec4(2.2));
+    } else return pow(ObjectColor, vec4(2.2));
 }
 
 vec4 interpolateNormal(hitinfo_t h)
@@ -340,6 +344,7 @@ bool intersectBVH(vec4 origin, vec4 dir, inout hitinfo_t h)
     return hit;
 }
 
+
 bool intersectBVH(vec4 origin, vec4 dir)
 {
     int rootIndex = 0;
@@ -384,14 +389,56 @@ bool intersectBVH(vec4 origin, vec4 dir)
 }
 // End BVH-related functions
 
+
+bool intersectSphere(vec4 origin, vec4 dir, inout hitinfo_t h) {
+    // Sphere parameters (replace these with your actual sphere parameters)
+    vec4 sphere_center = vec4(0.0, 0.0, 0.0, 1.0);
+    float sphere_radius = 1.0;
+
+    // Ray-sphere intersection algorithm
+    vec4 oc = origin - sphere_center;
+    float a = dot(dir, dir);
+    float b = 2.0 * dot(oc, dir);
+    float c = dot(oc, oc) - sphere_radius * sphere_radius;
+
+    float discriminant = b * b - 4.0 * a * c;
+
+    if (discriminant < 0.0) {
+        // No intersection
+        return false;
+    }
+
+    // Compute the two possible intersection points
+    float t1 = (-b - sqrt(discriminant)) / (2.0 * a);
+    float t2 = (-b + sqrt(discriminant)) / (2.0 * a);
+
+    // Find the nearest intersection point in front of the ray
+    float t = min(t1, t2);
+
+    if (t < 0.0) {
+        // Both intersections are behind the ray
+        return false;
+    }
+
+    // Compute intersection point and update hitinfo
+    h.hit_vptr = 0;
+    h.t = vec4(t, vec4(0.));
+
+    return true;
+}
+
 // Compute the first intersection along the ray (origin, dir).
 // returns the nearest intersection in h
 bool firstIntersection(vec4 origin, vec4 dir, out hitinfo_t h)
 {
     h.t.x = radius * MAX_SCENE_BOUNDS;
 
-    bool hit = intersectBVH(origin, dir, h);
-
+    bool hit;
+    if (sphereModel) {
+        hit = intersectSphere(origin, dir, h);
+    } else {
+        hit = intersectBVH(origin, dir, h);
+    }
     vec4 dist;
     if (intersectGround(origin, dir, dist) && dist.x < h.t.x) {
         hit = true;
@@ -408,6 +455,13 @@ bool isIntersected(vec4 origin, vec4 dir)
 {
     vec4 dist;
     return intersectGround(origin, dir, dist) || intersectBVH(origin, dir);
+}
+
+bool try_refract(vec3 I, vec3 N, float eta, out vec3 ref) {
+    float k = 1.0 - eta * eta * (1.0 - dot(N, I) * dot(N, I));
+    if (k < 0.0) { return false; }
+    ref = normalize(eta * I - (eta * dot(N, I) + sqrt(k)) * N);
+    return true;
 }
 
 // Local illumination related functions.
@@ -530,20 +584,27 @@ vec4 directIllumination(vec4 color, vec4 p, vec4 n, vec4 v, vec3 l)
 }
 
 
-const int MAX_TRACE = 8;
-const int MAX_REFLECT = 8;
+const int MAX_TRACE = 7;
+const int MAX_REFLECT = 4;
 
 void getLocal(vec4 origin, vec4 dir, hitinfo_t h, out vec4 color, out vec4 p, out vec4 n)
 {
     p = origin + h.t.x * dir;
     if (h.hit_vptr == GROUND_VPTR) {
-        //color = texture(colorTexture, h.t.pq*tileScale);
-        color = vec4(clamp(float((int(p.x) + int(p.z)) % 2), 0., 1.));
+        if (checkBoard) {
+            color = vec4(clamp(float((int(p.x) + int(p.z)) % 2), 0., 1.));
+        } else {
+            color = texture(groundTexture, h.t.pq*tileScale);
+        }
         p.y = -groundDistance;
         n = vec4(0.0, 1.0, 0.0, 0.0);
     } else {
         color = interpolateColor(h);
-        n = interpolateNormal(h);
+        if (sphereModel) {
+            n = normalize(origin+h.t.x*dir);
+        } else {
+            n = interpolateNormal(h);
+        }
     }
 }
 
@@ -569,9 +630,12 @@ vec4 trace(vec4 origin, vec4 dir)
     vec4 lastIntersection = origin;
     vec4 lastDirection = dir;
     stack[0].color = vec4(0.);
+    vec4 skyColor = pow(vec4(1., 0.1, 0.2, 0.), vec4(2.2));
 
     if (enableEnvMap) {
-        stack[0].color = texture(envMap, vec2(atan(dir.z, dir.x)/2./3.1416, dir.y*.5+.5)); // Default to black if no intersection for the first ray
+        stack[0].color = texture(envMap, vec2(atan(dir.z, dir.x)*.5/3.1416, dir.y*.5+.5)); // Default to black if no intersection for the first ray
+    } else {
+        stack[0].color = skyColor;
     }
 
     bool hasHit = false;
@@ -587,7 +651,9 @@ vec4 trace(vec4 origin, vec4 dir)
             ++sp;
             stack[sp-1].color = vec4(0.);
             if (enableEnvMap) {
-                stack[sp-1].color = texture(envMap, vec2(atan(lastDirection.z, lastDirection.x)/2./3.1416, lastDirection.y*.5+.5));
+                stack[sp-1].color = texture(envMap, vec2(atan(lastDirection.z, lastDirection.x)*.5/3.1416, lastDirection.y*.5+.5));
+            } else {
+                stack[sp-1].color = skyColor;
             }
             break;
         }
@@ -595,37 +661,41 @@ vec4 trace(vec4 origin, vec4 dir)
         stack[sp].dir = lastDirection;
 
         float s = 1.;
-        float n = 1./glassIndex;
+        float n = glassIndex;
         if (isInsideObject) {
             n = 1./n;
             s = -1.;
         }
-        float cos_th = max(0.,s*dot(stack[sp].N, -stack[sp].dir));
-        float rd = random(vec4(dir.xyz, float(accumulationCount*0.167)));
+        float cos_th = max(0., s*dot(stack[sp].N.xyz, -stack[sp].dir.xyz));
+        float rd = random(vec4(lastDirection.xyz, float(accumulationCount*0.167)));
 
-        vec3 ref = refract(lastDirection.xyz, s*stack[sp].N.xyz, n);
-        if (transparent && length(ref) > EPS && (stack[sp].h.hit_vptr != -1) && (rd >= real_fresnel(cos_th, 1./n))) {
-            lastDirection.xyz = normalize(ref);
-
+        vec3 normal = s*stack[sp].N.xyz;
+        vec3 refractedRay;
+        if (transparent && stack[sp].h.hit_vptr != -1) {
+            stack[sp].localColor = vec4(0.);
+        }
+        if (transparent && (stack[sp].h.hit_vptr != -1) && try_refract(lastDirection.xyz, normal, 1./n, refractedRay) && rd >= real_fresnel(cos_th, n)) {
+            lastDirection.xyz = refractedRay;
             isInsideObject = !isInsideObject;
             ++surface;
         } else {
-            lastDirection = reflect(lastDirection, s*stack[sp].N);
+            lastDirection.xyz = reflect(lastDirection.xyz, normal);
             ++reflectCount;
         }
 
         lastIntersection = stack[sp].hit + .001 * lastDirection;
+
     }
-   //return vec4(vec2(surface*0.1, reflectCount*0.1), 0., 0.);
+   //return vec4(vec2(surface*0.3, reflectCount*0.3), 0., 0.);
 
     if (hasHit) {
-        //stack[sp-1].color = directIllumination(stack[sp-1].localColor, stack[sp-1].hit, stack[sp-1].N, -stack[sp-1].dir, lightPosition-stack[sp-1].hit.xyz);
-        //return directIllumination(stack[sp-1].localColor, stack[sp-1].hit, stack[sp-1].N, -stack[sp-1].dir, lightPosition-stack[sp-1].hit.xyz);
+        stack[sp-1].color = directIllumination(stack[sp-1].localColor, stack[sp-1].hit, stack[sp-1].N, -stack[sp-1].dir, lightPosition-stack[sp-1].hit.xyz);
     }
     for (int i = sp-2; i >= 1; --i) {
         float cos_th = max(0.,dot(stack[i].N, -stack[i].dir));
-        if (stack[i].h.hit_vptr != -1) {
-            stack[i].color = stack[i+1].color;
+        if (transparent && stack[i].h.hit_vptr != -1) {
+            stack[i].color = directIllumination(stack[i].localColor, stack[i].hit, stack[i].N, -stack[i].dir, lightPosition-stack[i].hit.xyz)
+                + stack[i+1].color;
         } else {
             stack[i].color = directIllumination(stack[i].localColor, stack[i].hit, stack[i].N, -stack[i].dir, lightPosition-stack[i].hit.xyz)
                             + vec4(fresnel(cos_th, vec2(eta3dReal.x, eta3dImag.x)),
@@ -635,10 +705,11 @@ vec4 trace(vec4 origin, vec4 dir)
         }
     }
     if (sp-2 >= 0){
-        float cos_th = max(0., dot(stack[0].N, -stack[0].dir));
+        float cos_th = max(0., dot(stack[0].N.xyz, -stack[0].dir.xyz));
 
-        if (stack[0].h.hit_vptr != -1) {
-            stack[0].color = stack[1].color;
+        if (transparent && stack[0].h.hit_vptr != -1) {
+            stack[0].color = directIllumination(vec4(0), stack[0].hit, stack[0].N, -stack[0].dir, lightPosition-stack[0].hit.xyz)
+                + stack[1].color;
         } else {
             stack[0].color = directIllumination(stack[0].localColor, stack[0].hit, stack[0].N, -stack[0].dir, lightPosition-stack[0].hit.xyz)
                     + vec4(fresnel(cos_th, vec2(eta3dReal.x, eta3dImag.x)),
@@ -683,7 +754,7 @@ void main(void) {
 
     float meansq = dot(pixVal.xyz, pixVal.xyz);
     float var = abs(pixVal.a - meansq);
-    if ((accumulationCount > 10) && var<max(0.0001*meansq,0.001)) { // TODO: should be delayed ?
+    if ((accumulationCount > 300) && var<max(0.0001*meansq,0.001)) { // TODO: should be delayed ?
         //imageStore(framebuffer, pix, vec4(0.));
         return;
     }
@@ -709,7 +780,7 @@ void main(void) {
     vec4 color = trace(eye, dir);
 
     if (fastGammaCorrection) {
-        //color = pow(color, vec4(1./2.2));
+        color = min(pow(color, vec4(1./2.2)), 1.);
     }
     if (isnan(length(color))) {
         //color = vec4(1., 0., 0., 0.);

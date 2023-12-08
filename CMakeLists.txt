@@ -35,7 +35,6 @@ cuda_add_executable(
         Visual
         vendors/happly/happly.h
         vendors/stb_image/stb_image.h
-        vendors/stb_image/stb_image.cpp
         vendors/glad/glad.c
         vendors/imgui/imgui.cpp
         vendors/imgui/imgui_impl_glfw.cpp
@@ -66,7 +65,6 @@ cuda_add_executable(
         RTVisual
         vendors/happly/happly.h
         vendors/stb_image/stb_image.h
-        vendors/stb_image/stb_image.cpp
         vendors/glad/glad.c
         vendors/imgui/imgui.cpp
         vendors/imgui/imgui_impl_glfw.cpp
@@ -98,7 +96,6 @@ cuda_add_executable(
         SBVisual
         vendors/happly/happly.h
         vendors/stb_image/stb_image.h
-        vendors/stb_image/stb_image.cpp
         vendors/glad/glad.c
         vendors/imgui/imgui.cpp
         vendors/imgui/imgui_impl_glfw.cpp
@@ -112,6 +109,8 @@ cuda_add_executable(
 
         sb_main.cpp
 )
+
+
 
 set_target_properties(SBVisual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 

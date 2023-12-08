@@ -17,6 +17,34 @@
 #include <joint.h>
 #include <main.cuh>
 
+static bool USE_CUDA = false;
+static bool USE_RK4 = true;
+
+void DrawSBWindow(SoftBody2D& sb, uint32_t id, Scene &world) {
+
+    static int sbDim[3] = {10, 10, 10};
+    bool shouldReset = false;
+
+    ImGui::Begin("Menu");
+
+    ImGui::Checkbox("Use CUDA", &USE_CUDA);
+    ImGui::Checkbox("Use RK4", &USE_RK4);
+
+    sb.DrawWindow();
+
+    ImGui::SliderInt3("Rectangle Dimensions", sbDim, 1, 50);
+    shouldReset = ImGui::Button("Restart sim", ImVec2(150, 30));
+
+    if (shouldReset) {
+        PhysicsParam params {-0.0, 0.00};
+        sb = SoftBody2D::Cube(sbDim[0], sbDim[1], sbDim[2], params, SoftBody2D::Structure);
+        world.GetObjects()[id] = &sb;
+    }
+
+    ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+}
+
 
 int main() {
 
@@ -51,7 +79,7 @@ int main() {
     quad.Translate({0., 10., 15.});
     quad.SetScale(glm::vec3(20.f));
     PhysicsParam params {-0.0, 0.00};
-    auto sb = SoftBody2D::Cube(10, 10, 10, params, SoftBody2D::Structure);
+    auto sb = SoftBody2D::Cube(10, 25, 10, params, SoftBody2D::Structure);
     //auto sb = SoftBody2D::Rectangle(10, 20, params);
 
     auto grid = GraphGrid(100, 1);
@@ -63,7 +91,7 @@ int main() {
     world.AddObject(&grid);
 
     world.AddObject(&quad);
-    world.AddObject(&sb);
+    auto sbId = world.AddObject(&sb);
 
     auto camera = new PerspectiveCamera(ASPECT);
     camera->translate({5., 6.+5., -18.});
@@ -78,7 +106,23 @@ int main() {
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(.5, 0.2, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(.9, 0.7, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(.2, 0.1, 0.05, 1.));
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(.3, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(.5, 0.2, 0.05, 1.));
+
+    ImGui::GetStyle().FrameRounding = 4;
+    ImGui::GetStyle().ChildRounding = 4;
+    ImGui::GetStyle().GrabRounding = 4;
+    ImGui::GetStyle().WindowRounding = 4;
 
     const char* glsl_version = "#version 430 core";
     // Setup Platform/Renderer backends
@@ -103,12 +147,18 @@ int main() {
         static auto StartTime = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::high_resolution_clock::now();
 
-        sb.PhysicsStep(world.GetColliderObjects());
+        if (USE_CUDA) {
+            sb.CudaPhysicsStep(world.GetColliderObjects());
+        } else if (USE_RK4) {
+            sb.RkPhysicsStep(world.GetColliderObjects());
+        } else {
+            sb.PhysicsStep(world.GetColliderObjects());
+        }
 
+        DrawSBWindow(sb, sbId, world);
 
         world.Draw(inputManager.GetCamera());
 
-        sb.DrawWindow();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

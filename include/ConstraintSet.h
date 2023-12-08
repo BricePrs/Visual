@@ -15,7 +15,12 @@ public:
 
     ConstraintSet(const std::vector<uint32_t>& vertices) : mVertices(vertices) {}
 
-    void ApplyConstraint(std::vector<glm::vec3>& f);
+    void ApplyConstraint(std::vector<glm::vec3> &p, std::vector<glm::vec3> &v, std::vector<glm::vec3> &f, float t);
+
+    std::vector<uint32_t> GetConstraints() { return mVertices; }
+
+
+    float freq = 1.; // TODO move
 
 private:
 

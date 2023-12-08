@@ -10,6 +10,23 @@
 
 #include "Mesh.h"
 
+
+#define CUDA_CHECK_ERROR(err) \
+    {                         \
+        bool fail = false; \
+        do { \
+            cudaError_t cudaErr = err; \
+            if (cudaErr != cudaSuccess) { \
+                fail = true;      \
+                fprintf(stderr, "CUDA error in %s at line %d: %s (%d)\n", \
+                        __FILE__, __LINE__, cudaGetErrorString(cudaErr), cudaErr); \
+            } \
+        } while (0);               \
+        if (fail) { \
+            exit(EXIT_FAILURE);   \
+        }                         \
+    }
+
 template<class TVertex>
 Mesh<TVertex> Mesh<TVertex>::LoadFromPLY(const std::string &fileName) {
     auto parsedData = happly::PLYData(fileName);
@@ -45,11 +62,21 @@ void Mesh<TVertex>::SetDrawMode(GLenum mode) {
 }
 
 template <class TVertex>
+Mesh<TVertex>::~Mesh() {
+    if (mRefCounter.unique()) {
+        glDeleteBuffers(1, &mVao);
+        glDeleteBuffers(1, &mVbo);
+        glDeleteBuffers(1, &mEbo);
+        std::cout << "Deleting buffers" << std::endl;
+    }
+}
+
+template <class TVertex>
 Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive)
         :   InteractiveObject(interactive),
         mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.),
         mVertices(vertices), mIndices(indices)
-        , mIsHovered(false), mIsSelected(false)
+        , mIsHovered(false), mIsSelected(false), mRefCounter(std::make_shared<int>(0))
 {
 
     glGenVertexArrays(1, &mVao);
@@ -69,6 +96,9 @@ Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint
     SelectShaderProgram();
 
     mIndicesCount = indices.size();
+
+    //CUDA_CHECK_ERROR(cudaGraphicsGLRegisterBuffer(&mCuda_vertexBuffer, mVbo, cudaGraphicsMapFlagsWriteDiscard));
+
 }
 
 template <class TVertex>

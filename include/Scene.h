@@ -16,7 +16,7 @@ public:
     Scene() = default;
 
     void Draw(const PerspectiveCamera &camera);
-    void AddObject(Drawable* object);
+    uint32_t AddObject(Drawable* object);
     void AddCollider(Collider* object);
     std::vector<Drawable*>& GetObjects();
     std::vector<Collider*>& GetColliderObjects();

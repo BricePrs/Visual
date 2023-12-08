@@ -10,12 +10,17 @@ void Scene::Draw(const PerspectiveCamera &camera) {
     }
 }
 
-void Scene::AddObject(Drawable *object) {
+uint32_t Scene::AddObject(Drawable *object) {
     mSceneObjects.emplace_back(object);
+    return mSceneObjects.size()-1;
 }
 
 void Scene::AddCollider(Collider *object) {
     mSceneColliderObjects.emplace_back(object);
+}
+
+std::vector<Drawable *> &Scene::GetObjects() {
+    return mSceneObjects;
 }
 
 std::vector<Collider *> &Scene::GetColliderObjects() {

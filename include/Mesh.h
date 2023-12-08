@@ -13,9 +13,10 @@
 #include <Shader.h>
 #include <PerspectiveCamera.h>
 #include <iostream>
+#include <memory>
 #include <unordered_set>
 #include <glm/gtc/matrix_inverse.hpp>
-#include<Scene.h>
+#include <Scene.h>
 #include "Drawable.h"
 #include "Texture.h"
 #include "Collider.h"
@@ -103,6 +104,7 @@ public:
 
     Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices) : Mesh(vertices, indices, false) {}
     Mesh() : Mesh(std::vector<TVertex>(), std::vector<uint32_t>(), false) {}
+    ~Mesh();
 
     void Draw(const PerspectiveCamera &camera) override;
 
@@ -159,7 +161,10 @@ private:
     GLenum mPrimitiveMode = GL_TRIANGLES;
     GLenum mDrawMode = GL_FILL;
 
+    std::shared_ptr<int> mRefCounter;
+
     bool mRequestUpdateGPU = false;
+
 };
 
 

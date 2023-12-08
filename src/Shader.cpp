@@ -58,7 +58,10 @@ std::string Shader::readShaderSource(const std::string &shaderPath) {
 }
 
 Shader::Shader(const std::string &vertexName, const std::string &fragmentName) : mProgramID(
-        compileProgram(vertexName, fragmentName)) {}
+        compileProgram(vertexName, fragmentName))
+{
+    mRefCounter = std::make_shared<int>(0);
+}
 
 GLuint Shader::compileShader(GLuint type, const char *source) {
     

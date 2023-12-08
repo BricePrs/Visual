@@ -171,3 +171,4 @@ void InputManager::MouseMoveCallback(double x, double y) {
 const PerspectiveCamera &InputManager::GetCamera() {
     return *mCamera;
 }
+

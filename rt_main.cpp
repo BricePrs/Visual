@@ -50,7 +50,7 @@ int main() {
     auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
 
     Quad quad = Quad();
-    RayTracingCamera* rtCam = new RayTracingCamera(ASPECT);
+    RayTracingCamera* rtCam = new RayTracingCamera(1.);
     rtCam->translate({0., 0., -4.});
     quad.SetTexture(rtCam->GetTexture());
 
@@ -66,8 +66,11 @@ int main() {
     //rtCam->SetMesh(nullptr);
     rtCam->SetMesh("models/teapot_wt.ply");
     auto displayCamera = new PerspectiveCamera(ASPECT);
-    displayCamera->translate({0., 0., -6.5});
-    rtCam->SetEnvMap("textures/ennis.png");
+    displayCamera->translate({2., 0., -6.5});
+    rtCam->SetEnvMap("textures/pisa.png");
+    rtCam->SetGroundTex("textures/grace-new.png");
+    //rtCam->SetSphereTex("textures/earth1.png");
+    //rtCam->SetSphereNormalMap("textures/earth3.png");
 
 
     // --- ImGui Set Up --- //
@@ -80,7 +83,23 @@ int main() {
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(.5, 0.1, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(.9, 0.7, 0.05, 1.));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(.2, 0.1, 0.05, 1.));
+
+    //for (int i = 0; i < static_cast<int>(ImGuiCol_COUNT)-1; ++i) {
+    //    if (i < 11 || i > 11) {
+    //        continue;
+    //    }
+    //    ImGui::PushStyleColor(i, ImVec4(.3, 0.05, 0.07, 1.));
+    //}
+    ImGui::GetStyle().FrameRounding = 4;
+    ImGui::GetStyle().ChildRounding = 4;
+    ImGui::GetStyle().GrabRounding = 4;
+    ImGui::GetStyle().WindowRounding = 4;
 
     const char* glsl_version = "#version 430 core";
     // Setup Platform/Renderer backends
@@ -89,7 +108,6 @@ int main() {
 
 
     InputManager inputManager(window, world, rtCam);
-
 
     // --- Main Loop --- //
 
