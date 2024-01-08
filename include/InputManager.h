@@ -6,9 +6,9 @@
 #define VISUAL_INPUTMANAGER_H
 
 #include <ProjectIncludes.h>
-#include <imgui/imgui.h>
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
+#include <imgui_dock/imgui.h>
+#include "imgui_dock/imgui_impl_glfw.h"
+#include "imgui_dock/imgui_impl_opengl3.h"
 #include "Scene.h"
 #include "Mesh.h"
 
@@ -30,8 +30,8 @@ public:
 
 private:
 
-    void ProcessKeys();
-    void ProcessMouse();
+    void ProcessKeys(double deltaTime);
+    void ProcessMouse(double deltaTime);
 
 
     void MouseMoveCallback(double x, double y);
@@ -46,7 +46,7 @@ private:
     InteractiveObject *mActionObjects;
 
     // Select attributes
-    InteractiveObject *mHoveredObject;
+    InteractiveObject *mHoveredObject = nullptr;
     InteractiveObject *mSelectionCandidate;
     InteractiveObject *mSelectedObject;
 

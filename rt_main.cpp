@@ -11,9 +11,9 @@
 #include "InputManager.h"
 #include "Grid.h"
 #include "RayTracingCamera.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
+#include "imgui_dock/imgui.h"
+#include "imgui_dock/imgui_impl_glfw.h"
+#include "imgui_dock/imgui_impl_opengl3.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
@@ -50,7 +50,7 @@ int main() {
     auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
 
     Quad quad = Quad();
-    RayTracingCamera* rtCam = new RayTracingCamera(1.);
+    RayTracingCamera* rtCam = new RayTracingCamera(2048, 2048);
     rtCam->translate({0., 0., -4.});
     quad.SetTexture(rtCam->GetTexture());
 

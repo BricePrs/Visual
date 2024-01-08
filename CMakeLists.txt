@@ -51,6 +51,7 @@ cuda_add_executable(
 
 set_target_properties(Visual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
+target_compile_options(Visual PRIVATE -Wextra -Wconversion -pedantic)
 
 target_link_libraries(Visual -lglfw)
 target_link_libraries(Visual -lX11)
@@ -82,6 +83,7 @@ cuda_add_executable(
 
 set_target_properties(RTVisual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
+target_compile_options(RTVisual PRIVATE -Wextra -Wconversion -pedantic)
 
 target_link_libraries(RTVisual -lglfw)
 target_link_libraries(RTVisual -lX11)
@@ -94,15 +96,25 @@ target_link_libraries(RTVisual -ldl)
 
 cuda_add_executable(
         SBVisual
+
+        vendors/implot/implot.cpp
+        vendors/implot/implot.h
+        vendors/implot/implot_internal.h
+        vendors/implot/implot_items.cpp
+
+        vendors/gnuplot-iostream.h
+
         vendors/happly/happly.h
+
         vendors/stb_image/stb_image.h
+
         vendors/glad/glad.c
-        vendors/imgui/imgui.cpp
-        vendors/imgui/imgui_impl_glfw.cpp
-        vendors/imgui/imgui_impl_opengl3.cpp
-        vendors/imgui/imgui_draw.cpp
-        vendors/imgui/imgui_tables.cpp
-        vendors/imgui/imgui_widgets.cpp
+        vendors/imgui_dock/imgui.cpp
+        vendors/imgui_dock/imgui_impl_glfw.cpp
+        vendors/imgui_dock/imgui_impl_opengl3.cpp
+        vendors/imgui_dock/imgui_draw.cpp
+        vendors/imgui_dock/imgui_tables.cpp
+        vendors/imgui_dock/imgui_widgets.cpp
 
         ${CUDA_SRC_FILES} ${CUDA_HEADER_FILES}
         ${SRC_FILES} ${HEADER_FILES}
@@ -114,7 +126,7 @@ cuda_add_executable(
 
 set_target_properties(SBVisual PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-
+target_compile_options(SBVisual PRIVATE -Wextra -Wconversion -pedantic)
 target_link_libraries(SBVisual -lglfw)
 target_link_libraries(SBVisual -lX11)
 target_link_libraries(SBVisual -lGL)
@@ -122,5 +134,5 @@ target_link_libraries(SBVisual -lpthread)
 target_link_libraries(SBVisual -lXrandr)
 target_link_libraries(SBVisual -lXi)
 target_link_libraries(SBVisual -ldl)
-
+target_link_libraries(SBVisual -lboost_iostreams)
 

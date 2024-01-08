@@ -25,13 +25,13 @@ void DoublePendulum::InitOpenGl() {
 
 }
 
-void DoublePendulum::Draw(const PerspectiveCamera &camera) {
+void DoublePendulum::Draw(const PerspectiveCamera &camera, Shader &shader) {
     UpdateMesh();
     for (auto & sphere : spheres) {
-        sphere.Draw(camera);
+        sphere.Draw(camera, shader);
     }
     for (auto & tube : tubes) {
-        tube.Draw(camera);
+        tube.Draw(camera, shader);
     }
 }
 

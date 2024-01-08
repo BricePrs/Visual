@@ -8,7 +8,7 @@
 #include "bvh.h"
 #include "happly/happly.h"
 #include <glm/gtc/type_ptr.hpp>
-#include "imgui/imgui.h"
+#include "imgui_dock/imgui.h"
 
 
 glm::vec3 HSBtoRGB(glm::vec3 hsb) {
@@ -47,7 +47,22 @@ glm::vec3 HSBtoRGB(glm::vec3 hsb) {
 }
 
 RayTracingCamera::RayTracingCamera(double aspect)
-    : PerspectiveCamera(aspect),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
+        : PerspectiveCamera(aspect),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
+{
+    glGenFramebuffers(1, &mFramebufferId);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFramebufferId);
+    mFramebufferTex.Bind();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mFramebufferTex.GetOpenglId(), 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        throw std::runtime_error("Could not create framebuffer");
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    mShader = {"rtsia.comp"};
+
+}
+
+RayTracingCamera::RayTracingCamera(uint32_t width, uint32_t height)
+        : PerspectiveCamera(width, height),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
 {
     glGenFramebuffers(1, &mFramebufferId);
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebufferId);
@@ -80,7 +95,7 @@ void RayTracingCamera::DrawScene(const PerspectiveCamera& camera) {
     mShader.setVec3("lightPosition", mSPLightPosition);
     mShader.setFloat("blinnPhong", mSPBlinnPhong);
     mShader.setBool("transparent", mSPTransparent);
-    mShader.setBool("fastGammaCorrection", true);
+    mShader.setBool("fastGammaCorrection", mSPFastGammaCorrection);
     mShader.setFloat("lightIntensity", mSPLightIntensity);
     mShader.setFloat("shininess", mSPShininess);
     mShader.setBool("enableEnvMap", mSPEnvMap);
@@ -207,6 +222,7 @@ void RayTracingCamera::DrawWindow() {
 
     ImGui::Begin("Menu");
 
+    shouldReset = shouldReset || ImGui::Checkbox("Gamma Correction", &mSPFastGammaCorrection);
     shouldReset = shouldReset || ImGui::Checkbox("Transparent", &mSPTransparent);
     shouldReset = shouldReset || ImGui::Checkbox("Blinn-Phong", &mSPBlinnPhong);
     shouldReset = shouldReset || ImGui::Checkbox("EnvMap", &mSPEnvMap);
@@ -224,6 +240,25 @@ void RayTracingCamera::DrawWindow() {
     shouldReset = shouldReset || ImGui::SliderFloat("Shininess", &mSPShininess, 0.0f, 200.0f);
     shouldReset = shouldReset || ImGui::SliderFloat("GlassIndex", &mGlassIndex, 1.0f, 3.0f);
 
+
+    const char *models[] = {"models/Armadillo.ply", "models/Armadillo_LR.ply", "models/dragon.ply",
+                           "models/lemming.ply", "models/sword.ply", "models/teapot.ply",
+                           "models/teapot_wt.ply"};
+    static int models_current_idx = 0;
+    if (ImGui::ListBox("Models", &models_current_idx, models, IM_ARRAYSIZE(models), 6)) {
+        shouldReset = true;
+        delete mRtMesh;
+        mRtMesh = RayTracingMesh::LoadFromPLY(models[models_current_idx]);
+    }
+
+    const char *envMaps[] = {"textures/earth1.png", "textures/earth2.png", "textures/ennis.png",
+                             "textures/envmap.png", "textures/grace-new.png", "textures/pisa.png",
+                             "textures/uffizi-large.png"};
+    static int envMaps_current_idx = 0;
+    if (ImGui::ListBox("Env Map", &envMaps_current_idx, envMaps, IM_ARRAYSIZE(envMaps), 6)) {
+        shouldReset = true;
+        mEnvMap = Texture::LoadFromFile(envMaps[envMaps_current_idx]);
+    }
 
     ImGui::Text("Accumulated %i frames", mAccumulationCount);
 

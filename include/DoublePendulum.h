@@ -25,7 +25,7 @@ public:
 
     void Step();
     void Step2();
-    void Draw(const PerspectiveCamera &camera);
+    void Draw(const PerspectiveCamera &camera, Shader &shader);
 
 private:
 

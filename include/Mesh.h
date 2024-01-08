@@ -74,7 +74,7 @@ public:
 
 
     static bool GetHovered(int32_t x, int32_t y, InteractiveObject* &hoveredObject);
-    void Draw(const PerspectiveCamera &camera) override;
+    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
 
     virtual void OnHover() {};
     virtual void OnHoverQuit() {};
@@ -97,7 +97,7 @@ private:
 
 
 template <class TVertex>
-class Mesh : public InteractiveObject {
+class Mesh : public Drawable {
 public:
 
     Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive);
@@ -106,7 +106,7 @@ public:
     Mesh() : Mesh(std::vector<TVertex>(), std::vector<uint32_t>(), false) {}
     ~Mesh();
 
-    void Draw(const PerspectiveCamera &camera) override;
+    void Draw(const PerspectiveCamera &camera, Shader &meshShader) override;
 
     void ChangeVertices(std::vector<TVertex> &vertices);
 
@@ -116,6 +116,7 @@ public:
     void Rotate(glm::vec3 x);
 
     glm::vec3 GetPosition() const;
+    const std::vector<TVertex>& GetVertices() const;
     void SetPosition(glm::vec3 x);
     void SetRotation(glm::vec3 x);
     void SetScale(glm::vec3 s);
@@ -124,19 +125,21 @@ public:
     void SetDrawMode(GLenum mode);
     void SetTexture(Texture texture);
 
-    void OnHover() override;
-    void OnHoverQuit() override;
-    void OnClick() override;
+    //void OnHover() override;
+    //void OnHoverQuit() override;
+    //void OnClick() override;
 
-    static Mesh LoadFromPLY(const std::string &fileName);
+    static Mesh LoadFromPLY(const std::string &fileName, float scale);
 
     void RecomputeVerticesAttributes();
+
+
+    inline static std::optional<Shader> MESH_SHADER = {};
 
 
 private:
 
     void SetVaoAttrib();
-    void SelectShaderProgram();
 
     glm::vec3 mPosition;
     glm::vec3 mColor;
@@ -157,13 +160,13 @@ private:
     GLuint mVbo;
     GLuint mEbo;
 
-    Shader mProgram;
     GLenum mPrimitiveMode = GL_TRIANGLES;
     GLenum mDrawMode = GL_FILL;
 
     std::shared_ptr<int> mRefCounter;
 
     bool mRequestUpdateGPU = false;
+
 
 };
 
@@ -172,7 +175,7 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName);
 
 
 template class Mesh<SimpleVertex>;
-template class Mesh<SimpleColorVertex>;
+template class  Mesh<SimpleColorVertex>;
 template class Mesh<SimpleUvVertex>;
 template class Mesh<SimpleNormalVertex>;
 
@@ -218,7 +221,7 @@ public:
 
     GraphGrid(uint16_t resolution, double scale);
 
-    void Draw(const PerspectiveCamera &camera);
+    void Draw(const PerspectiveCamera &camera, Shader &shader);
 
 private:
     Mesh<SimpleColorVertex> mReferentialLines;
@@ -230,12 +233,22 @@ public:
 
     WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color);
 
-    void Draw(const PerspectiveCamera &camera) override;
+    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
     void UpdateBox(glm::vec3 center, glm::vec3 sides);
+
+    glm::vec3 &GetCenter() {
+        return mCenter;
+    }
+
+    glm::vec3 &GetSides() {
+        return mSides;
+    }
 
 private:
 
-    Mesh<SimpleVertex> mMesh;
+    Mesh<SimpleVertex>  mMesh;
+    glm::vec3           mCenter;
+    glm::vec3           mSides;
 
 };
 
@@ -244,9 +257,9 @@ public:
 
     Arrow3D(glm::vec3 base, glm::vec3 direction, glm::vec3 color);
 
-    void OnHover() override { SetColor(mColor + glm::vec3(.5)); }
-    void OnHoverQuit() override { SetColor(mColor); }
-    void OnClick() override {}
+    //void OnHover() override { SetColor(mColor + glm::vec3(.5)); }
+    //void OnHoverQuit() override { SetColor(mColor); }
+    //void OnClick() override {}
 
 protected:
 
@@ -264,15 +277,15 @@ public:
 
     using Arrow3D::Arrow3D;
 
-    bool HasAction() override { return true; };
-    void OnActionStart(int32_t x, int32_t y) override {};
-    void OnActionMove(Scene &world, const PerspectiveCamera &camera, double x, double y, double dx, double dy) override {
-        glm::mat4 iProj = glm::inverse(camera.getProjMatrix());
-        glm::mat4 iView = glm::inverse(camera.getViewMatrix());
-        double near = camera.getNear(), far = camera.getFar();
-        double t = AxisPosition(iProj, iView, camera.getPosition(), near, far, x+dx, y+dy);
-        SetPosition(mOrigin + glm::normalize(mDirection)*(float)t);
-    };
+    //bool HasAction() override { return true; };
+    //void OnActionStart(int32_t x, int32_t y) override {};
+    //void OnActionMove(Scene &world, const PerspectiveCamera &camera, double x, double y, double dx, double dy) override {
+    //    glm::mat4 iProj = glm::inverse(camera.getProjMatrix());
+    //    glm::mat4 iView = glm::inverse(camera.getViewMatrix());
+    //    double near = camera.getNear(), far = camera.getFar();
+    //    double t = AxisPosition(iProj, iView, camera.getPosition(), near, far, x+dx, y+dy);
+    //    SetPosition(mOrigin + glm::normalize(mDirection)*(float)t);
+    //};
 
 private:
 

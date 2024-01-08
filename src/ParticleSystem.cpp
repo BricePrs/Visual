@@ -18,9 +18,9 @@ ParticleSystem::ParticleSystem(glm::vec3 position, glm::vec3 bounds, double radi
     }
 }
 
-void ParticleSystem::Draw(const PerspectiveCamera &camera) {
-    mBoundingBox.Draw(camera);
+void ParticleSystem::Draw(const PerspectiveCamera &camera, Shader& shader) {
+    mBoundingBox.Draw(camera, shader);
     for (auto &sphere: mSpheres) {
-        sphere.Draw(camera);
+        sphere.Draw(camera, shader);
     }
 }

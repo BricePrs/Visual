@@ -584,8 +584,8 @@ vec4 directIllumination(vec4 color, vec4 p, vec4 n, vec4 v, vec3 l)
 }
 
 
-const int MAX_TRACE = 7;
-const int MAX_REFLECT = 4;
+const int MAX_TRACE = 8;
+const int MAX_REFLECT = 7;
 
 void getLocal(vec4 origin, vec4 dir, hitinfo_t h, out vec4 color, out vec4 p, out vec4 n)
 {
@@ -638,6 +638,10 @@ vec4 trace(vec4 origin, vec4 dir)
         stack[0].color = skyColor;
     }
 
+    if (fastGammaCorrection) {
+        stack[0].color = min(pow(stack[0].color, vec4(2.2)), 1.);
+    }
+
     bool hasHit = false;
     bool isInsideObject = false;
     int surface = 0;
@@ -654,6 +658,9 @@ vec4 trace(vec4 origin, vec4 dir)
                 stack[sp-1].color = texture(envMap, vec2(atan(lastDirection.z, lastDirection.x)*.5/3.1416, lastDirection.y*.5+.5));
             } else {
                 stack[sp-1].color = skyColor;
+            }
+            if (fastGammaCorrection) {
+                stack[sp-1].color = min(pow(stack[sp-1].color, vec4(2.2)), 1.);
             }
             break;
         }
@@ -754,7 +761,7 @@ void main(void) {
 
     float meansq = dot(pixVal.xyz, pixVal.xyz);
     float var = abs(pixVal.a - meansq);
-    if ((accumulationCount > 300) && var<max(0.0001*meansq,0.001)) { // TODO: should be delayed ?
+    if ((accumulationCount > 100) && var<max(0.0001*meansq,0.001)) { // TODO: should be delayed ?
         //imageStore(framebuffer, pix, vec4(0.));
         return;
     }
@@ -782,11 +789,7 @@ void main(void) {
     if (fastGammaCorrection) {
         color = min(pow(color, vec4(1./2.2)), 1.);
     }
-    if (isnan(length(color))) {
-        //color = vec4(1., 0., 0., 0.);
-    }
 
-    //color.a = dot(color.xyz, color.xyz);
     vec4 result = (pixVal*float(accumulationCount) + color)/float(accumulationCount+1);
 
     /*vec4 dist;

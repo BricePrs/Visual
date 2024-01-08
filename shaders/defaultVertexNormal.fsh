@@ -13,8 +13,8 @@ in vec3 vertexNormal;
 
 #define EPS 0.0001
 
-#define Ka 0.05
-#define Kd 0.5
+#define Ka 0.15
+#define Kd 0.7
 #define shininess 180.
 #define eta3dReal vec3(1.5)
 #define eta3dImag vec3(0.)

@@ -42,6 +42,7 @@ class RayTracingCamera : public PerspectiveCamera {
 public:
 
     explicit RayTracingCamera(double aspect);
+    RayTracingCamera(uint32_t width, uint32_t height);
 
     void DrawScene(const PerspectiveCamera& camera);
 
@@ -73,7 +74,7 @@ private:
     uint32_t mAccumulationCount = 0;
     bool mResetAccumulation = true;
 
-    static inline uint32_t CAMERA_RES = 600;
+    static inline uint32_t CAMERA_RES = 3*256;
 
 
     // --- Scene params --- //
@@ -81,10 +82,11 @@ private:
     float mSPGroundDistance = 1.;
     float mSPRadius = 10.;
     bool mSPBlinnPhong = false;
-    bool mSPEnvMap = true;
+    bool mSPEnvMap = false;
     bool mSPCheckboard = true;
     bool mSPTransparent = true;
     bool mSPSphereModel = true;
+    bool mSPFastGammaCorrection = false;
     float mSPLightIntensity = 1.;
     glm::vec3 mSPLightPosition = glm::vec3(10.f);
     glm::vec3 mSPEta3dReal = glm::vec3(0.f, 0., 1.);

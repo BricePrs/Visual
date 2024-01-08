@@ -15,18 +15,15 @@
 class Shader {
 public:
 
-    Shader() : mProgramID(0) {
-        mRefCounter = std::make_shared<int>(0);
-    }
+    Shader() : mProgramID(0) {}
 
     Shader(const std::string &vertexName, const std::string &fragmentName);
     ~Shader() {
-        if (mRefCounter.unique()) {
+        if (mRefCounter != nullptr && mRefCounter.unique()) {
             glDeleteProgram(mProgramID);
             std::cout << "Deleting program" << std::endl;
         }
     };
-
 
     void use() const;
 

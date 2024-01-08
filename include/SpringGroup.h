@@ -38,6 +38,12 @@ struct DampedSpring {
         float damping = p.a * rel_speed;
         return spring - damping;
     }
+
+    [[nodiscard]]
+    static float ComputePotentialEnergy(float l, const DampedSpringParams& p) {
+        float d = std::max(0.f, std::abs(l-p.l0*p.l0Mult)-p.rDist);
+        return d*d;
+    }
 };
 
 

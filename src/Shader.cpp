@@ -45,14 +45,21 @@ std::string Shader::readShaderSource(const std::string &shaderPath) {
     std::ifstream shaderSourceFile;
     shaderSourceFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     try {
+        static int i = 0;
+        ++i;
         shaderSourceFile.open(shaderPath);
         shaderStream << shaderSourceFile.rdbuf();
         shaderSourceFile.close();
         shaderSource = shaderStream.str();
     }
-    catch (std::ifstream::failure e)
+    catch (std::ifstream::failure& e)
     {
-        std::cout << "ERROR::SHADER::COULD_NOT_READ_FILE:" << "shaders/default.fsh" << std::endl;
+        std::cerr << "ERROR::SHADER::COULD_NOT_READ_FILE:" << "shaders/default.fsh" << std::endl;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Error random exception : " << e.what() << std::endl;
+
     }
     return shaderSource;
 }
@@ -82,6 +89,7 @@ GLuint Shader::compileShader(GLuint type, const char *source) {
         char error[512];
         glGetShaderInfoLog(shader, 512, nullptr, error);
         std::cout << "ERROR::" << strType << "::COULD_NOT_COMPILE::" << error << std::endl;
+        throw std::runtime_error("Could not compile shader !");
     }
     
     return shader;
