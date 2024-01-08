@@ -10,6 +10,7 @@
 #include "Scene.h"
 #include "InputManager.h"
 #include "AnimatedMesh.h"
+#include "AnimatedJoint.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
@@ -71,6 +72,12 @@ int main() {
 
     AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
 
+    AnimatedJoint animatedJoint1 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DF0_FARMR.txt", glm::vec3(-2., 4., 1.));
+    AnimatedJoint animatedJoint2 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DF3_PELV.txt", glm::vec3(-4., 4., 1.));
+    AnimatedJoint animatedJoint3 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DF7_UARML.txt", glm::vec3(-6., 4., 1.));
+    AnimatedJoint animatedJoint4 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DFA_FARML.txt", glm::vec3(-8., 4., 1.));
+    AnimatedJoint animatedJoint5 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DFB_UARMR.txt", glm::vec3(-10., 4., 1.));
+
 
     Scene world;
     world.AddObject(&grid);
@@ -82,6 +89,11 @@ int main() {
     world.AddObject(&arrowy);
     world.AddObject(&arrowz);
     world.AddObject(&animatedMesh);
+    world.AddObject(&animatedJoint1);
+    world.AddObject(&animatedJoint2);
+    world.AddObject(&animatedJoint3);
+    world.AddObject(&animatedJoint4);
+    world.AddObject(&animatedJoint5);
 
     InputManager inputManager(window, world);
     while (!glfwWindowShouldClose(window)) {
@@ -100,6 +112,11 @@ int main() {
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
         animatedMesh.Update(elapsed);
+        animatedJoint1.Update(elapsed);
+        animatedJoint2.Update(elapsed);
+        animatedJoint3.Update(elapsed);
+        animatedJoint4.Update(elapsed);
+        animatedJoint5.Update(elapsed);
 
         world.Draw(inputManager.GetCamera());
 
