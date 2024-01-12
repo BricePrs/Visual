@@ -257,7 +257,7 @@ struct SimulationParams {
     float                               scale                   = 1.f;
     SoftBody::DisplayMode               displayMode             = SoftBody::Hull;
     float                               vertexMass              = 1.f;
-    float                               boundarySpringK         = 50.f;
+    float                               boundaryF               = 0.6f;
     PhysicsParam                        physicsParams;
     std::vector<uint8_t>                enableConstraintSet;
     std::vector<glm::vec3>              positionsICBackup;     // Per Mass

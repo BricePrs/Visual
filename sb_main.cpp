@@ -35,7 +35,7 @@ void DrawSBWindow(std::shared_ptr<SoftBody> &sb, ObjectId id, Scene &world) {
 
     sb->DrawWindow();
 
-    ImGui::SliderFloat3("Boundary sides", glm::value_ptr(sb->GetParams()->boundaryBox->GetSides()), 0., 30.);
+    ImGui::SliderFloat3("Boundary sides", glm::value_ptr(sb->GetParams()->boundaryBox->GetSides()), 0., 50.);
     ImGui::SliderFloat3("Boundary Center", glm::value_ptr(sb->GetParams()->boundaryBox->GetCenter()), 0., 30.);
     sb->GetParams()->boundaryBox->UpdateBox(sb->GetParams()->boundaryBox->GetCenter(), sb->GetParams()->boundaryBox->GetSides());
 
@@ -160,19 +160,22 @@ int main() {
 
     std::shared_ptr<WireframeBox> boundaryBox = std::make_shared<WireframeBox>(
                     glm::vec3(0., 10., 0.),
-                    glm::vec3(10.),
+                    glm::vec3(45, 10., 45.),
                     glm::vec3(1., .5, .3)
                 );
 
-    PhysicsParam params {-0.0, 0.00};
+    PhysicsParam params {-0.1, 0.00};
     std::shared_ptr<SignedDistanceField> sdf = std::make_shared<SignedDistanceField>(20, 8.);
 
     //sdf->AddSphere(glm::vec3(0.), 2.);
     //sdf->AddSphere(glm::vec3(1.5), 1.);
 
-    sdf->AddCapsule(glm::vec3(0., 0., .0), glm::vec3(1., 0., 0.2), 3., 1.);
-    sdf->AddCapsule(glm::vec3(-2.6, 0., .0), glm::vec3(0., 1., 0.), 4., 1.3);
-    sdf->AddCapsule(glm::vec3(2.6, 0., .0), glm::vec3(0., 1., 0.), 4., 1.3);
+    sdf->AddSphere(glm::vec3(0.), 3.5);
+    //sdf->RemoveCapsule(glm::vec3(0., 0., .0), glm::vec3(0., 0., 1.), 10., 1.3);
+    sdf->RemoveSphere(glm::vec3(0.), 2.);
+
+    //sdf->AddCapsule(glm::vec3(0., 0., .0q.0), glm::vec3(0., 1., 0.), 4., 1.3);
+    //sdf->AddCapsule(glm::vec3(2.6, 0., .0), glm::vec3(0., 1., 0.), 4., 1.3);
 
     //sdf->BuildMesh();
     //auto sbp = SoftBody::Cube(10, 10, 10, params, SoftBody::Hull);

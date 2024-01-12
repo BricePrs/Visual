@@ -16,6 +16,7 @@ struct DampedSpringParams {
     float rDist;
     float maxT;
     float l0Mult = 1.;
+    bool enableBreak = false;
 };
 
 struct DampedSpring {

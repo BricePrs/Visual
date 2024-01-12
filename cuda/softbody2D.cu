@@ -45,13 +45,35 @@ __global__ void Ker_PointSphereCollision(uint32_t N, glm::vec3 *force, glm::vec3
                            std::cout << "Execution Time: " << duration.count() << " microseconds" << std::endl;
 
 
-__global__ void Ker_SolveGroundCollisions(int N, glm::vec3* positions, glm::vec3* forces, glm::vec3 boundaryCenter, glm::vec3 boundarySides, float boundaryK) {
+__global__ void Ker_SolveGroundCollisions(int N, glm::vec3* positions, glm::vec3* velocities, glm::vec3* forces, glm::vec3 boundaryCenter, glm::vec3 boundarySides, float f) {
     int i = blockIdx.x*blockDim.x + threadIdx.x;
     if (i >= N) { return; }
 
     auto relPos = positions[i] - boundaryCenter;
     auto diff = glm::min(boundarySides - glm::abs(relPos), glm::vec3(0.));
-    forces[i] += boundaryK * diff * glm::sign(relPos);
+    // Elastic contact
+    //glm::vec3 normalReaction = mSimulationParams->boundarySpringK * diff * glm::sign(relPos);
+    glm::vec3 normalReactionDir = diff * glm::sign(relPos);
+    if (glm::length(normalReactionDir) < 0.1) {
+        return;
+    }
+    normalReactionDir = glm::normalize(normalReactionDir);
+    glm::vec3 normalReaction = glm::max(0.f, -glm::dot(forces[i], normalReactionDir)) * normalReactionDir;
+    glm::vec3 tangentialReaction;
+    glm::vec3 velocityProjection = velocities[i]-glm::dot(velocities[i], normalReactionDir) * normalReactionDir;
+    if (glm::length(velocityProjection) > 0.001) {
+        tangentialReaction = -glm::normalize(velocityProjection) * f * glm::length(normalReaction);
+    } else {
+        tangentialReaction = -(forces[i] - glm::dot(forces[i], normalReactionDir)*normalReactionDir);
+        if (glm::length(tangentialReaction) > f * glm::length(normalReaction)) {
+            tangentialReaction = f*glm::length(normalReaction)*glm::normalize(tangentialReaction);
+        }
+    }
+
+    forces[i] += normalReaction + tangentialReaction;
+    if (glm::dot(velocities[i], normalReactionDir) < 0.) {
+        velocities[i] -= glm::dot(velocities[i], normalReactionDir)*normalReactionDir;
+    }
 }
 
 void ParallelSolveSphereCollision(const CudaResources& resources, CudaODESystem &odeSystem, glm::vec4 sphere) {
@@ -63,7 +85,7 @@ void ParallelSolveSphereCollision(const CudaResources& resources, CudaODESystem 
 void ParallelSolveCollision(const CudaResources& resources, CudaODESystem &odeSystem, const std::shared_ptr<SimulationParams> params) {
     uint32_t N = resources.MassCount;
     uint32_t blockSize = 128;
-    Ker_SolveGroundCollisions<<<(N + blockSize - 1) / blockSize, blockSize>>>(N, odeSystem.Positions, odeSystem.TotalForces, params->boundaryBox->GetCenter(), params->boundaryBox->GetSides(), params->boundarySpringK);
+    Ker_SolveGroundCollisions<<<(N + blockSize - 1) / blockSize, blockSize>>>(N, odeSystem.Positions, odeSystem.Velocities, odeSystem.TotalForces, params->boundaryBox->GetCenter(), params->boundaryBox->GetSides(), params->boundaryF);
 }
 
 
@@ -101,7 +123,7 @@ __global__ void Ker_CudaComputeSpringMassForces (uint32_t N, DampedSpringParams 
         //printf("Length of %i - %i is %f / %f)\n", springs[i].i, springs[i].j, glm::length(pi - pj), params.l0*params.l0Mult);
 
         f = Hel_ComputeForce(glm::length(pi - pj), relSpeed, params);
-        if (f > params.maxT) {
+        if (params.enableBreak && f > params.maxT) {
             springs[i].enabled = false;
             f = 0.;
         }
@@ -242,7 +264,7 @@ __global__ void Ker_CudaApplyRkCoefs(uint32_t N,
     int i = blockIdx.x*blockDim.x + threadIdx.x;
     if (i >= N) { return; }
     // Updating velocities and positions
-    Velocities[i] += dt / 6.f * (kForces_1[i] + 2.f*kForces_2[i] + 2.f*kForces_3[i] + kForces_4[i]) * mass;
+    Velocities[i] += dt / 6.f * (kForces_1[i] + 2.f*kForces_2[i] + 2.f*kForces_3[i] + kForces_4[i]) / mass;
     Positions[i] += dt / 6.f * (kVelocities_1[i] + 2.f * kVelocities_2[i] + 2.f * kVelocities_3[i] + kVelocities_4[i]);
 }
 

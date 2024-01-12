@@ -38,7 +38,7 @@ void SBRotationCallback(
         auto rot_diff = rotationMatrix * diff;
 
         //p[verticesIndex[i]] = startingPos[i] + (glm::vec3(0., 0., additionalInfo.center.z-25.f))*.01f*t;
-        p[verticesIndex[i]] = rot_diff+center;
+        //v[verticesIndex[i]] = glm::vec3(glm::sin(t*additionalInfo.angularVelocity)*0.2f, 0.f, 0.f); // TODO : not 0
         v[verticesIndex[i]] = glm::vec3(0.f); // TODO : not 0
         f[verticesIndex[i]] = glm::vec3(0.f);
     }

@@ -23,6 +23,9 @@ public:
 
     void AddSphere(glm::vec3 center, float radius);
     void AddCapsule(glm::vec3 center, glm::vec3 dir, float length, float radius);
+    void RemoveSphere(glm::vec3 center, float radius);
+    void RemoveCapsule(glm::vec3 center, glm::vec3 dir, float length, float radius);
+    void InterCapsule(glm::vec3 center, glm::vec3 dir, float length, float radius);
 
     void BuildMesh();
     std::shared_ptr<SoftBody> BuildSoftbody(PhysicsParam params, SoftBody::DisplayMode displayMode);

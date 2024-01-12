@@ -58,6 +58,27 @@ void SignedDistanceField::AddCapsule(glm::vec3 center, glm::vec3 dir, float leng
     }
 }
 
+void SignedDistanceField::RemoveSphere(glm::vec3 center, float radius) {
+    for (uint32_t i = 0; i < mResolution*mResolution*mResolution; ++i) {
+        mField[i] = std::max(mField[i], -SphereSDF(CoordsToSpace(LinearToCoords(i)), center, radius));
+        mGrid[i] = mField[i] < 0.;
+    }
+}
+
+void SignedDistanceField::RemoveCapsule(glm::vec3 center, glm::vec3 dir, float length, float radius) {
+    for (uint32_t i = 0; i < mResolution*mResolution*mResolution; ++i) {
+        mField[i] = std::max(mField[i], -CapsuleSDF(CoordsToSpace(LinearToCoords(i)), center, dir, length, radius));
+        mGrid[i] = mField[i] < 0.;
+    }
+}
+
+void SignedDistanceField::InterCapsule(glm::vec3 center, glm::vec3 dir, float length, float radius) {
+    for (uint32_t i = 0; i < mResolution*mResolution*mResolution; ++i) {
+        mField[i] = std::max(mField[i], CapsuleSDF(CoordsToSpace(LinearToCoords(i)), center, dir, length, radius));
+        mGrid[i] = mField[i] < 0.;
+    }
+}
+
 void SignedDistanceField::BuildMesh() {
     std::vector<SimpleVertex> vertices;
     std::vector<uint32_t> indices;

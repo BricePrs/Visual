@@ -15,7 +15,7 @@ struct SBFaceCenterInfo {
     std::vector<uint32_t> centerIndices;
     float angularVelocity;
 
-    SBFaceCenterInfo(std::vector<uint32_t> centerIndices, float angularVelocity) : centerIndices(centerIndices), angularVelocity(angularVelocity) {}
+        SBFaceCenterInfo(std::vector<uint32_t> centerIndices, float angularVelocity) : centerIndices(centerIndices), angularVelocity(angularVelocity) {}
 
 };
 

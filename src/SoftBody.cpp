@@ -401,15 +401,14 @@ std::shared_ptr<SoftBody> SoftBody::Cube(uint32_t l1, uint32_t l2, uint32_t l3, 
     auto * bottomCallbackInfo = new SBFaceCenterInfo( {0, static_cast<unsigned int>(l1*l2*l3-1) }, 2.f );
     auto * topCallbackInfo = new SBFaceCenterInfo( {0, static_cast<unsigned int>(l1*l2*l3-1) }, -2.f );
 
-    DampedSpringParams sp1D = {1., 0., 1., 0.0, 100.};
-    DampedSpringParams sp2D = {1., 0., std::sqrt(2.f), 0., 100.};
-    DampedSpringParams sp3D = {1., 0., std::sqrt(3.f), 0., 100.};
+    DampedSpringParams sp1D = {20., 0., 1., 0.0, 100.};
+    DampedSpringParams sp2D = {20., 0., std::sqrt(2.f), 0., 100.};
+    DampedSpringParams sp3D = {20., 0., std::sqrt(3.f), 0., 100.};
     std::vector<std::tuple<std::vector<uint32_t>, DampedSpringParams>> springGroups = {{indices1D, sp1D}, {indices2D, sp2D}, {indices3D, sp3D}};
 
     ConstraintSet::Callback callback = SBRotationCallback;
     std::vector<ConstraintSet> constraintSets = {
-            {constraintsBottomIndices, callback, bottomCallbackInfo},
-            {constraintsTopIndices, callback, topCallbackInfo}
+            {BuildFaceIndices(l3, 1, l2*l3, l3, (l1-1)*l2*l3), callback, bottomCallbackInfo},
     };
 
     std::vector<std::vector<uint32_t>> hullIndices = {
@@ -795,7 +794,7 @@ void SoftBody::ComputeForces() {
             float f = 0.;
             if (spring.enabled){
                 f = DampedSpring::ComputeForce(glm::length(pi-pj), relSpeed, springGroup.params);
-                if (f > springGroup.params.maxT) {
+                if (springGroup.params.enableBreak && f > springGroup.params.maxT) {
                     spring.enabled = false;
                     f = 0.;
                 }
@@ -899,8 +898,8 @@ void SoftBody::ComputeRKCoefs(const std::vector<std::shared_ptr<Collider>> &coll
 
     // Updating velocities and positions
     for (uint32_t i = 0; i < mPositions.size(); ++i) {
-        mVelocities[i] += mSimulationParams->physicsParams.dt / 6.f * (mRK_kForces[0][i] + 2.f*mRK_kForces[1][i] + 2.f*mRK_kForces[2][i] + mRK_kForces[3][i]) * mSimulationParams->vertexMass;
-        mPositions[i] += mSimulationParams->physicsParams.dt / 6.f * (mRK_kVelocities[0][i] + 2.f * mRK_kVelocities[1][i] + 2.f * mRK_kVelocities[2][i] + mRK_kVelocities[3][i]) * mSimulationParams->vertexMass;
+        mVelocities[i] += mSimulationParams->physicsParams.dt / 6.f * (mRK_kForces[0][i] + 2.f*mRK_kForces[1][i] + 2.f*mRK_kForces[2][i] + mRK_kForces[3][i]) / mSimulationParams->vertexMass;
+        mPositions[i] += mSimulationParams->physicsParams.dt / 6.f * (mRK_kVelocities[0][i] + 2.f * mRK_kVelocities[1][i] + 2.f * mRK_kVelocities[2][i] + mRK_kVelocities[3][i]) / mSimulationParams->vertexMass;
         //mPositions[i] += mSimulationParams->physicsParams.dt * mVelocities[i];
     }
 
@@ -1043,7 +1042,7 @@ void SoftBody::SolveCollisions(const std::vector<std::shared_ptr<Collider>> &col
                 auto path = collider->ShortestSurfacePoint(mPositions[i] + mStructureMesh->GetPosition());
                 //mPositions[i] += path;
                 //mVelocities[i] = path/mSimulationParams->physicsParams.dt; // TODO : not working for many colliders
-                mForces[i] += 100.f*glm::normalize(path); // TODO : not working for many colliders
+                mForces[i] += 20.f*glm::normalize(path); // TODO : not working for many colliders
             }
             //mForces[i] += collider->ComputeCollisionForce(mPositions[i]+mMesh->GetPosition())*.1f;
         }
@@ -1064,14 +1063,22 @@ void SoftBody::SolveCollisions(const std::vector<std::shared_ptr<Collider>> &col
             continue;
         }
         normalReactionDir = glm::normalize(normalReactionDir);
-        glm::vec3 normalReaction = -glm::dot(mForces[i], normalReactionDir) * normalReactionDir;
-        auto tangentialReaction = -(mForces[i] + normalReaction);
-        if (glm::length(tangentialReaction) > 0.6 * glm::length(normalReaction)) {
-            tangentialReaction = glm::normalize(tangentialReaction);
-            tangentialReaction *= 0.6*glm::length(normalReaction);
+        glm::vec3 normalReaction = glm::max(0.f, -glm::dot(mForces[i], normalReactionDir)) * normalReactionDir;
+        glm::vec3 tangentialReaction;
+        glm::vec3 velocityProjection = mVelocities[i]-glm::dot(mVelocities[i], normalReactionDir) * normalReactionDir;
+        if (glm::length(velocityProjection) > 0.001) {
+            tangentialReaction = -glm::normalize(velocityProjection) * mSimulationParams->boundaryF * glm::length(normalReaction);
+        } else {
+            tangentialReaction = -(mForces[i] - glm::dot(mForces[i], normalReactionDir)*normalReactionDir);
+            if (glm::length(tangentialReaction) > mSimulationParams->boundaryF * glm::length(normalReaction)) {
+                tangentialReaction = mSimulationParams->boundaryF * glm::length(normalReaction)*glm::normalize(tangentialReaction);
+            }
         }
-        mForces[i] += normalReaction;
-        mVelocities[i] *= diff; 
+
+        mForces[i] += normalReaction + tangentialReaction;
+        if (glm::dot(mVelocities[i], normalReactionDir) < 0.) {
+            mVelocities[i] -= glm::dot(mVelocities[i], normalReactionDir)*normalReactionDir;
+        }
     }
 }
 
@@ -1104,6 +1111,7 @@ void SoftBody::DrawWindow() {
 
     ImGui::SliderFloat("g", &mSimulationParams->physicsParams.g, -.1, 0);
     ImGui::SliderFloat("m", &mSimulationParams->vertexMass, 0.001, 3.);
+    ImGui::SliderFloat("f", &mSimulationParams->boundaryF, 0.0, 1.5);
     ImGui::SliderInt("Display mode", reinterpret_cast<int *>(&mSimulationParams->displayMode), 0, 1);
     ImGui::SliderInt("Sub Physic Update", reinterpret_cast<int *>(&mSimulationParams->subPhysicStep), 0, 20);
     for (int i = 0; i < mConstraintSets.size(); ++i) {
@@ -1117,11 +1125,12 @@ void SoftBody::DrawWindow() {
         snprintf(buff, sizeof(buff), "Spring %i (%zu)", i, mSpringGroups[i].GetSprings().size());
         if (ImGui::CollapsingHeader(buff)) {
             bool shouldUpdateSpringGroup = false;
-            shouldUpdateSpringGroup = ImGui::SliderFloat("k", &mSpringGroups[i].params.k, 0., 1000.) || shouldUpdateSpringGroup;
+            shouldUpdateSpringGroup = ImGui::SliderFloat("k", &mSpringGroups[i].params.k, 0., 100.) || shouldUpdateSpringGroup;
             shouldUpdateSpringGroup = ImGui::SliderFloat("l0", &mSpringGroups[i].params.l0Mult, 0.1, 2.) || shouldUpdateSpringGroup;
             shouldUpdateSpringGroup = ImGui::SliderFloat("a", &mSpringGroups[i].params.a, -1., 1.) || shouldUpdateSpringGroup;
             shouldUpdateSpringGroup = ImGui::SliderFloat("Relaxation", &mSpringGroups[i].params.rDist, -1., 1.) || shouldUpdateSpringGroup;
             shouldUpdateSpringGroup = ImGui::SliderFloat("Max Tension", &mSpringGroups[i].params.maxT, 0.000001, 100.) || shouldUpdateSpringGroup;
+            shouldUpdateSpringGroup = ImGui::Checkbox("Enable Break", &mSpringGroups[i].params.enableBreak) || shouldUpdateSpringGroup;
             if (shouldUpdateSpringGroup && mHasSimulationStarted) {
 #ifdef ENABLE_CUDA
                 mCuda_Resources.SpringGroups[i].params = mSpringGroups[i].params;
