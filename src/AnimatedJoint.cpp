@@ -5,15 +5,15 @@
 #include <fstream>
 #include "AnimatedJoint.h"
 
-void AnimatedJoint::Draw(const PerspectiveCamera &camera) {
-    mArrowX.Draw(camera);
-    mArrowY.Draw(camera);
-    mArrowZ.Draw(camera);
+void AnimatedJoint::Draw(const PerspectiveCamera &camera, Shader &shader) {
+    mArrowX.Draw(camera, shader);
+    mArrowY.Draw(camera, shader);
+    mArrowZ.Draw(camera, shader);
     if (mMesh.has_value()) {
-        mMesh->Draw(camera);
+        mMesh->Draw(camera, shader);
     }
     for (auto &child: mChildren) {
-        child->Draw(camera);
+        child->Draw(camera, shader);
     }
 }
 

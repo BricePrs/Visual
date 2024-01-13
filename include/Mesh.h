@@ -173,7 +173,7 @@ private:
 };
 
 
-Mesh<SimpleVertex> ParseOFF(std::string fileName);
+Mesh<SimpleColorVertex> ParseOFF(std::string fileName);
 
 
 template class Mesh<SimpleVertex>;

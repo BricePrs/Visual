@@ -55,7 +55,7 @@ void AnimatedMesh::Update(double dt) {
 
 }
 
-void AnimatedMesh::Draw(const PerspectiveCamera &camera) {
-    mSkeletonMesh.Draw(camera);
-    mSkinMesh.Draw(camera);
+void AnimatedMesh::Draw(const PerspectiveCamera &camera, Shader &shader) {
+    mSkeletonMesh.Draw(camera, shader);
+    mSkinMesh.Draw(camera, shader);
 }

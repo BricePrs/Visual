@@ -30,14 +30,6 @@
     }
 
 
-template<class TVertex>
-Mesh<TVertex> Mesh<TVertex>::LoadFromPLY(const std::string &fileName) {
-    auto parsedData = happly::PLYData(fileName);
-    std::vector<std::array<double, 3>> vPos = parsedData.getVertexPositions();
-    std::vector<std::vector<size_t>> fInd = parsedData.getFaceIndices<size_t>();
-    return {{}, {}};
-}
-
 template<>
 Mesh<SimpleVertex> Mesh<SimpleVertex>::LoadFromPLY(const std::string &fileName, float scale) {
     auto parsedData = happly::PLYData(fileName);
@@ -122,7 +114,6 @@ Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint
 
     //CUDA_CHECK_ERROR(cudaGraphicsGLRegisterBuffer(&mCuda_vertexBuffer, mVbo, cudaGraphicsMapFlagsWriteDiscard));
 
-    mIndicesCount = indices.size();
 }
 
 template <class TVertex>
@@ -133,7 +124,7 @@ void Mesh<TVertex>::ChangeVertices(std::vector<TVertex> &vertices) {
 
 template <class TVertex>
 void Mesh<TVertex>::ChangeIndices(std::vector<uint32_t > &indices) {
-    mRequestUpdateVBO = true;
+    mRequestUpdateEBO = true;
     mIndices = indices;
 }
 
@@ -214,8 +205,8 @@ void Mesh<SimpleNormalVertex>::RecomputeVerticesAttributes() {
 }
 
 
-Mesh<SimpleVertex> ParseOFF(std::string fileName) {
-    std::vector<SimpleVertex> vertices;
+Mesh<SimpleColorVertex> ParseOFF(std::string fileName) {
+    std::vector<SimpleColorVertex> vertices;
     std::vector<uint32_t> indices;
     std::ifstream inputfile(fileName.data());
     if(inputfile.good()) {
@@ -239,7 +230,7 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName) {
             float y = std::stof(buf, nullptr);
             inputfile >> buf;
             float z = std::stof(buf, nullptr);
-            vertices.emplace_back(x, y, z);
+            vertices.emplace_back(glm::vec3(x, y, z), glm::vec3(1.f, 1.f, 1.f));
         }
 
         for (int i = 0; i < indicesCount; ++i) {
@@ -275,8 +266,12 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera, Shader &shader) {
 
     if (mRequestUpdateVBO) {
         UpdateVerticesData();
-        UpdateIndicesData();
         mRequestUpdateVBO = false;
+    }
+
+    if (mRequestUpdateEBO) {
+        UpdateIndicesData();
+        mRequestUpdateEBO = false;
     }
 
 

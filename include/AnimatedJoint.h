@@ -16,7 +16,7 @@ public:
     AnimatedJoint(const std::string& fileName, glm::vec3 position, const std::string &name = {});
 
     void Update(double dt);
-    void Draw(const PerspectiveCamera &camera) override;
+    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
     std::shared_ptr<AnimatedJoint> AddChildren(const std::string& fileName, glm::vec3 relativePosition, const std::string &name = {});
 
     void SetPosition(const glm::vec3 &position);
