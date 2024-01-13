@@ -62,7 +62,7 @@ GLenum Texture::ChannelToInternalFormat(uint8_t channels) {
 }
 
 Texture::Texture(const char *data, uint32_t width, uint32_t height, uint8_t channels)
-        : Texture(data, width, height, ChannelToFormat(channels), ChannelToInternalFormat(channels))
+    : Texture(data, width, height, ChannelToFormat(channels), ChannelToInternalFormat(channels))
 {}
 
 Texture::Texture(const char *data, uint32_t width, uint32_t height, GLenum format, GLenum internalFormat) {

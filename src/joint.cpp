@@ -158,7 +158,6 @@ void Joint::animate(int iframe)
     for (unsigned int idof = 0 ; idof < _dofs.size() ; idof++) {
         if (_children.empty()) continue;
         if (_dofs[idof]._values.size() <= iframe) {
-            std::cout << "Max value is " << _dofs[idof]._values.size() << " but asked for " << iframe << std::endl;
             continue;
         }
         if(!_dofs[idof].name.compare("Xposition")) _curTx = _dofs[idof]._values[iframe];

@@ -10,16 +10,19 @@
 class PerspectiveCamera {
 public:
 
-    PerspectiveCamera(double aspect) : mPitch(0.), mYaw(0.), mYFov(90.), mPosition(glm::vec3(0.)), mNear(0.01), mFar(100.),
+    PerspectiveCamera(double aspect) : mPitch(0.), mYaw(0.), mYFov(glm::radians(95.)), mPosition(glm::vec3(0.)), mNear(0.01), mFar(100.),
         mAspect(aspect), mFront(glm::vec3(0., 0., 1.)), mUp(glm::vec3(0., 1., 0.)), mRight(glm::vec3(1., 0., 0.)) {}
+
+    PerspectiveCamera(uint32_t width, uint32_t height) : mPitch(0.), mYaw(0.), mYFov(glm::radians(95.)), mPosition(glm::vec3(0.)), mNear(0.01), mFar(100.),
+               mAspect(static_cast<double>(width)/height), mFront(glm::vec3(0., 0., 1.)), mUp(glm::vec3(0., 1., 0.)), mRight(glm::vec3(1., 0., 0.)) {}
 
     [[nodiscard]] glm::mat4 getViewMatrix() const;
     [[nodiscard]] glm::mat4 getProjMatrix() const;
     [[nodiscard]] double getNear() const;
     [[nodiscard]] double getFar() const;
 
-    void translate(glm::vec3 t);
-    void rotate(double dPitch, double dYaw);
+    virtual void translate(glm::vec3 t);
+    virtual void rotate(double dPitch, double dYaw);
 
     glm::vec3 getPosition() const;
     glm::vec3 getUp() const;

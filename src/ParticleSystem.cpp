@@ -13,14 +13,14 @@ ParticleSystem::ParticleSystem(glm::vec3 position, glm::vec3 bounds, double radi
         float ry = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         float rz = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         glm::vec3 spPosition = position + (glm::vec3(rx, ry, rz) * 2.f - 1.f) * glm::max(glm::vec3(0.), bounds-glm::vec3(radius));
-        mSpheres.emplace_back(radius, 10, true);
+        mSpheres.emplace_back(radius, 3, true);
         mSpheres[mSpheres.size()-1].SetPosition(spPosition);
     }
 }
 
-void ParticleSystem::Draw(const PerspectiveCamera &camera) {
-    mBoundingBox.Draw(camera);
+void ParticleSystem::Draw(const PerspectiveCamera &camera, Shader& shader) {
+    mBoundingBox.Draw(camera, shader);
     for (auto &sphere: mSpheres) {
-        sphere.Draw(camera);
+        sphere.Draw(camera, shader);
     }
 }

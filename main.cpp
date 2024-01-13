@@ -11,9 +11,12 @@
 #include "InputManager.h"
 #include "AnimatedMesh.h"
 #include "AnimatedJoint.h"
+#include "Grid.h"
+#include "RayTracingCamera.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
+#include <main.cuh>
 
 
 int main() {
@@ -75,21 +78,33 @@ int main() {
     animatedJoint3->SetEnd(glm::vec3(0., 0., .3));
     animatedJoint4->SetEnd(glm::vec3(0., 0., .3));
 
-    auto a = Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
+
     Scene world;
     world.AddObject(&grid);
-    world.AddObject(&a);
+    //world.AddObject(&Pendulum2);
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
     world.AddObject(&animatedMesh);
     world.AddObject(&animatedJointRoot);
 
-    InputManager inputManager(window, world);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+
+
+    InputManager inputManager(window, world, new PerspectiveCamera(ASPECT));
     while (!glfwWindowShouldClose(window)) {
         auto startFrameTime = std::chrono::high_resolution_clock::now();
         glClearColor(.08, .05, 0.05, 1.);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glStencilMask(0x00);
+
+
+
+        int32_t stepCount = static_cast<int32_t>(1./60./dt*.01);
+        for (int i = 0; i < stepCount; ++i) {
+            Pendulum2.Step2();
+        }
 
         static auto StartTime = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::high_resolution_clock::now();

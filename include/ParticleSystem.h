@@ -13,7 +13,7 @@ public:
 
     ParticleSystem(glm::vec3 position, glm::vec3 bounds, double radius, uint32_t n);
 
-    void Draw(const PerspectiveCamera &camera);
+    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
 
 private:
     glm::vec3 mPosition;

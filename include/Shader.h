@@ -7,15 +7,23 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <memory>
 #include <string>
 #include <glm/glm.hpp>
+#include <iostream>
 
 class Shader {
 public:
 
     Shader() : mProgramID(0) {}
+
     Shader(const std::string &vertexName, const std::string &fragmentName);
-    ~Shader() {};
+    ~Shader() {
+        if (mRefCounter != nullptr && mRefCounter.unique()) {
+            glDeleteProgram(mProgramID);
+            std::cout << "Deleting program" << std::endl;
+        }
+    };
 
     void use() const;
 
@@ -32,7 +40,24 @@ private:
     static GLuint compileProgram(const std::string &vertexName, const std::string &fragmentName);
     static GLuint compileShader(GLuint type, const char *source);   // TODO return optional
 
+protected:
     GLuint mProgramID;
+    std::shared_ptr<int> mRefCounter;
+
+};
+
+
+class ComputeShader : public Shader {
+public:
+
+    ComputeShader() = default;
+    ComputeShader(const std::string &computeName);
+
+private:
+
+    static std::string readComputeSource(const std::string &shaderPath);
+    static GLuint compileComputeProgram(const std::string &computeName);
+    static GLuint compileComputeShader(GLuint type, const char *source);
 
 };
 

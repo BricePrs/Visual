@@ -45,19 +45,30 @@ std::string Shader::readShaderSource(const std::string &shaderPath) {
     std::ifstream shaderSourceFile;
     shaderSourceFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     try {
+        static int i = 0;
+        ++i;
         shaderSourceFile.open(shaderPath);
         shaderStream << shaderSourceFile.rdbuf();
         shaderSourceFile.close();
         shaderSource = shaderStream.str();
     }
-    catch (std::ifstream::failure e)
+    catch (std::ifstream::failure& e)
     {
-        std::cout << "ERROR::SHADER::COULD_NOT_READ_FILE:" << "shaders/default.fsh" << std::endl;
+        std::cerr << "ERROR::SHADER::COULD_NOT_READ_FILE:" << "shaders/default.fsh" << std::endl;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Error random exception : " << e.what() << std::endl;
+
     }
     return shaderSource;
 }
 
-Shader::Shader(const std::string &vertexName, const std::string &fragmentName) : mProgramID(compileProgram(vertexName, fragmentName)) {}
+Shader::Shader(const std::string &vertexName, const std::string &fragmentName) : mProgramID(
+        compileProgram(vertexName, fragmentName))
+{
+    mRefCounter = std::make_shared<int>(0);
+}
 
 GLuint Shader::compileShader(GLuint type, const char *source) {
     
@@ -78,6 +89,7 @@ GLuint Shader::compileShader(GLuint type, const char *source) {
         char error[512];
         glGetShaderInfoLog(shader, 512, nullptr, error);
         std::cout << "ERROR::" << strType << "::COULD_NOT_COMPILE::" << error << std::endl;
+        throw std::runtime_error("Could not compile shader !");
     }
     
     return shader;
@@ -141,3 +153,72 @@ bool Shader::setBool(const std::string &name, bool value) {
     }
     glUniform1i(location, value);
     return true;}
+
+ComputeShader::ComputeShader(const std::string &computeName)
+{
+    mProgramID = compileComputeProgram(computeName);
+}
+
+std::string ComputeShader::readComputeSource(const std::string &shaderPath) {
+    std::string shaderSource;
+    std::stringstream shaderStream;
+    std::ifstream shaderSourceFile;
+    shaderSourceFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        shaderSourceFile.open(shaderPath);
+        shaderStream << shaderSourceFile.rdbuf();
+        shaderSourceFile.close();
+        shaderSource = shaderStream.str();
+    }
+    catch (std::ifstream::failure e)
+    {
+        std::cout << "ERROR::SHADER::COULD_NOT_READ_FILE:" << "shaders/default.fsh" << std::endl;
+    }
+    return shaderSource;
+}
+
+GLuint ComputeShader::compileComputeProgram(const std::string &computeName) {
+
+    std::string compPath = std::string("shaders/raytracing/") + computeName;
+
+    std::string compSource = readComputeSource(compPath);
+
+    GLuint compShader = compileComputeShader(GL_COMPUTE_SHADER, compSource.c_str());
+
+    GLuint Program = glCreateProgram();
+    glAttachShader(Program, compShader);
+
+    int32_t result;
+    glLinkProgram(Program);
+    glGetProgramiv(Program, GL_LINK_STATUS, &result);
+    if (!result) {
+        char error[512];
+        glGetProgramInfoLog(Program, 512, nullptr, error);
+        std::cout << "ERROR::PROGRAM::COULD_NOT_LINK::" << error << std::endl;
+        throw std::runtime_error("Could not link shaders");
+    }
+
+    glDeleteShader(compShader);
+
+    return Program;
+}
+
+GLuint ComputeShader::compileComputeShader(GLuint type, const char *source) {
+
+    GLuint shader = glCreateShader(type);
+
+    std::string strType = "COMPUTE";
+
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+    int32_t result;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+    if (!result) {
+        char error[512];
+        glGetShaderInfoLog(shader, 512, nullptr, error);
+        std::cout << "ERROR::" << strType << "::COULD_NOT_COMPILE::" << error << std::endl;
+        throw std::runtime_error("Could not compile shader");
+    }
+
+    return shader;
+}

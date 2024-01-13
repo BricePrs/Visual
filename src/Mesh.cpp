@@ -10,6 +10,26 @@
 
 #include "Mesh.h"
 
+
+
+
+#define CUDA_CHECK_ERROR(err) \
+    {                         \
+        bool fail = false; \
+        do { \
+            cudaError_t cudaErr = err; \
+            if (cudaErr != cudaSuccess) { \
+                fail = true;      \
+                fprintf(stderr, "CUDA error in %s at line %d: %s (%d)\n", \
+                        __FILE__, __LINE__, cudaGetErrorString(cudaErr), cudaErr); \
+            } \
+        } while (0);               \
+        if (fail) { \
+            exit(EXIT_FAILURE);   \
+        }                         \
+    }
+
+
 template<class TVertex>
 Mesh<TVertex> Mesh<TVertex>::LoadFromPLY(const std::string &fileName) {
     auto parsedData = happly::PLYData(fileName);
@@ -18,20 +38,42 @@ Mesh<TVertex> Mesh<TVertex>::LoadFromPLY(const std::string &fileName) {
     return {{}, {}};
 }
 
-template<class TVertex>
-void Mesh<TVertex>::OnClick() {
-    mIsSelected = !mIsSelected;
+template<>
+Mesh<SimpleVertex> Mesh<SimpleVertex>::LoadFromPLY(const std::string &fileName, float scale) {
+    auto parsedData = happly::PLYData(fileName);
+    std::vector<std::array<double, 3>> vPos = parsedData.getVertexPositions();
+    std::vector<std::vector<size_t>> fInd = parsedData.getFaceIndices<size_t>();
+
+    std::vector<SimpleVertex> vertices; vertices.reserve(vPos.size());
+    for (auto & v : vPos) {
+        vertices.emplace_back(v[0] * scale, v[1] * scale, v[2] * scale);
+    }
+    std::vector<uint32_t> indices; indices.reserve(fInd.size()*3);
+    for (auto &face: fInd) {
+        assert(face.size() == 3);
+        indices.emplace_back(face[0]);
+        indices.emplace_back(face[1]);
+        indices.emplace_back(face[2]);
+    }
+
+    return Mesh<SimpleVertex>(vertices, indices);
 }
 
-template<class TVertex>
-void Mesh<TVertex>::OnHover() {
-    mIsHovered = true;
-}
 
-template<class TVertex>
-void Mesh<TVertex>::OnHoverQuit() {
-    mIsHovered = false;
-}
+//template<class TVertex>
+//void Mesh<TVertex>::OnClick() {
+//    mIsSelected = !mIsSelected;
+//}
+//
+//template<class TVertex>
+//void Mesh<TVertex>::OnHover() {
+//    mIsHovered = true;
+//}
+//
+//template<class TVertex>
+//void Mesh<TVertex>::OnHoverQuit() {
+//    mIsHovered = false;
+//}
 
 template<class TVertex>
 void Mesh<TVertex>::SetPrimitiveMode(GLenum mode) {
@@ -45,11 +87,21 @@ void Mesh<TVertex>::SetDrawMode(GLenum mode) {
 }
 
 template <class TVertex>
+Mesh<TVertex>::~Mesh() {
+    if (mRefCounter.unique()) {
+        glDeleteBuffers(1, &mVao);
+        glDeleteBuffers(1, &mVbo);
+        glDeleteBuffers(1, &mEbo);
+        std::cout << "Deleting buffers" << std::endl;
+    }
+}
+
+template <class TVertex>
 Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint32_t> &indices, bool interactive)
-        :   InteractiveObject(interactive),
-            mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.),
-            mVertices(vertices), mIndices(indices)
-        , mIsHovered(false), mIsSelected(false)
+        :
+        mPosition(0.), mOrientation({1., 0., 0., 0.}), mColor(1.),
+        mVertices(vertices), mIndices(indices)
+        , mIsHovered(false), mIsSelected(false), mRefCounter(std::make_shared<int>(0))
 {
 
     glGenVertexArrays(1, &mVao);
@@ -66,7 +118,9 @@ Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEbo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
-    SelectShaderProgram();
+    mIndicesCount = indices.size();
+
+    //CUDA_CHECK_ERROR(cudaGraphicsGLRegisterBuffer(&mCuda_vertexBuffer, mVbo, cudaGraphicsMapFlagsWriteDiscard));
 
     mIndicesCount = indices.size();
 }
@@ -79,7 +133,7 @@ void Mesh<TVertex>::ChangeVertices(std::vector<TVertex> &vertices) {
 
 template <class TVertex>
 void Mesh<TVertex>::ChangeIndices(std::vector<uint32_t > &indices) {
-    mRequestUpdateEBO = true;
+    mRequestUpdateVBO = true;
     mIndices = indices;
 }
 
@@ -98,6 +152,7 @@ void Mesh<TVertex>::UpdateVerticesData() {
 
 }
 
+
 template <class TVertex>
 void Mesh<TVertex>::UpdateIndicesData() {
     glBindVertexArray(mVao);
@@ -114,20 +169,7 @@ void Mesh<TVertex>::UpdateIndicesData() {
 }
 
 
-template <class TVertex>
-void Mesh<TVertex>::SelectShaderProgram() {
-    if constexpr (std::is_same<TVertex, SimpleVertex>::value) {
-        mProgram = {"default.vsh", "default.fsh"};
-    } else if constexpr (std::is_same<TVertex, SimpleColorVertex>::value) {
-        mProgram = {"defaultVertexColor.vsh", "defaultVertexColor.fsh"};
-    } else if constexpr (std::is_same<TVertex, SimpleUvVertex>::value) {
-        mProgram = {"default_texture.vsh", "default_texture.fsh"};
-    } else if constexpr (std::is_same<TVertex, SimpleNormalVertex>::value) {
-        mProgram = {"defaultVertexNormal.vsh", "defaultVertexNormal.fsh"};
-    } else {
-        // Do nothing
-    }
-}
+
 
 template <class TVertex>
 void Mesh<TVertex>::SetVaoAttrib() {
@@ -226,41 +268,45 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName) {
 
 
 template <class TVertex>
-void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
+void Mesh<TVertex>::Draw(const PerspectiveCamera &camera, Shader &shader) {
+
+    Shader meshShader = MESH_SHADER.value();
+    meshShader.use();
 
     if (mRequestUpdateVBO) {
         UpdateVerticesData();
-        mRequestUpdateVBO = false;
-    }
-    if (mRequestUpdateVBO) {
         UpdateIndicesData();
         mRequestUpdateVBO = false;
     }
 
-    InteractiveObject::Draw(camera);
 
     glPolygonMode(GL_FRONT_AND_BACK, mDrawMode);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
 
-    mProgram.use();
-    mProgram.setMat4("perspective", camera.getProjMatrix());
-    mProgram.setMat4("view", camera.getViewMatrix());
-    mProgram.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(glm::inverse(mOrientation)));
+    meshShader.setMat4("perspective", camera.getProjMatrix());
+    meshShader.setMat4("view", camera.getViewMatrix());
+    meshShader.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(mOrientation));
 
-    mProgram.setVec3("cameraPosition", camera.getPosition()); // Could be retrieved from view matrix
-    mProgram.setVec3("backgroundColor", {.08, .05, 0.05}); // Could be retrieved from view matrix
+    meshShader.setVec3("cameraPosition", camera.getPosition()); // Could be retrieved from view matrix
+    meshShader.setVec3("backgroundColor", {.08, .05, 0.05}); // Could be retrieved from view matrix
 
-    mProgram.setBool("bOverrideColor", mIsHovered || mIsSelected);
+    meshShader.setBool("bOverrideColor", mIsHovered || mIsSelected);
     if (mIsSelected) {
-        mProgram.setVec3("overrideColor",mSelectedColor);
+        meshShader.setVec3("overrideColor", mSelectedColor);
     } else if (mIsHovered) {
-        mProgram.setVec3("overrideColor",mHoverColor);
+        meshShader.setVec3("overrideColor", mHoverColor);
     }
-    mProgram.setVec3("objectColor",mColor);
+    meshShader.setVec3("objectColor", mColor);
 
-    mProgram.setInt("objectTexture", 0);
+    meshShader.setInt("objectTexture", 0);
+
+    if (mTexture.has_value()) {
+        mTexture.value().AssignToLocation(0);
+    }
+
+    meshShader.setInt("objectTexture", 0);
 
     if (mTexture.has_value()) {
         mTexture.value().AssignToLocation(0);
@@ -281,6 +327,11 @@ void Mesh<TVertex>::SetTexture(Texture texture) {
     mTexture = texture;
 }
 
+
+template<class TVertex>
+const std::vector<TVertex>& Mesh<TVertex>::GetVertices() const {
+    return mVertices;
+}
 
 template <class TVertex>
 void Mesh<TVertex>::SetPosition(glm::vec3 x) {
@@ -462,9 +513,9 @@ GraphGrid::GraphGrid(uint16_t resolution, double scale) {
     mReferentialLines.SetPrimitiveMode(GL_LINES);
 }
 
-void GraphGrid::Draw(const PerspectiveCamera &camera) {
-    mScaleGrid.Draw(camera);
-    mReferentialLines.Draw(camera);
+void GraphGrid::Draw(const PerspectiveCamera &camera, Shader& shader) {
+    mScaleGrid.Draw(camera, shader);
+    mReferentialLines.Draw(camera, shader);
 }
 
 //TODO : Refactor update != get
@@ -485,14 +536,14 @@ bool InteractiveObject::GetHovered(int32_t x, int32_t y, InteractiveObject* &hov
     return true;
 }
 
-void InteractiveObject::Draw(const PerspectiveCamera &camera) {
+void InteractiveObject::Draw(const PerspectiveCamera &camera, Shader& shader) { // TODO : shader not required
     glEnable(GL_STENCIL_TEST);
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, mId, 0xFF);
     glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
 }
 
-WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) {
+WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) : mCenter(center), mSides(sides) {
     std::vector<SimpleVertex> vertices = {
             glm::vec3(-1, -1, -1),                                   // 0
 
@@ -523,8 +574,8 @@ void WireframeBox::UpdateBox(glm::vec3 center, glm::vec3 sides) {
 }
 
 
-void WireframeBox::Draw(const PerspectiveCamera &camera) {
-    mMesh.Draw(camera);
+void WireframeBox::Draw(const PerspectiveCamera &camera, Shader& shader) {
+    mMesh.Draw(camera, shader);
 }
 
 Arrow3D::Arrow3D(glm::vec3 base, glm::vec3 direction, glm::vec3 color)
