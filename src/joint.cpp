@@ -166,10 +166,7 @@ void Joint::animate(int iframe)
         if(!_dofs[idof].name.compare("Zposition")) _curTz = _dofs[idof]._values[iframe];
         if(!_dofs[idof].name.compare("Zrotation")) _curRz = _dofs[idof]._values[iframe];
         if(!_dofs[idof].name.compare("Yrotation")) _curRy = _dofs[idof]._values[iframe];
-        if(!_dofs[idof].name.compare("Xrotation")) {
-            _curRx = _dofs[idof]._values[iframe];
-
-        };
+        if(!_dofs[idof].name.compare("Xrotation")) _curRx = _dofs[idof]._values[iframe];
     }
 
     // Animate children :

@@ -247,7 +247,7 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera) {
     mProgram.use();
     mProgram.setMat4("perspective", camera.getProjMatrix());
     mProgram.setMat4("view", camera.getViewMatrix());
-    mProgram.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(mOrientation));
+    mProgram.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(glm::inverse(mOrientation)));
 
     mProgram.setVec3("cameraPosition", camera.getPosition()); // Could be retrieved from view matrix
     mProgram.setVec3("backgroundColor", {.08, .05, 0.05}); // Could be retrieved from view matrix
@@ -290,6 +290,11 @@ void Mesh<TVertex>::SetPosition(glm::vec3 x) {
 template <class TVertex>
 void Mesh<TVertex>::SetRotation(glm::vec3 x) {
     mOrientation = glm::quat(x);
+}
+
+template <class TVertex>
+void Mesh<TVertex>::SetRotation(glm::quat q) {
+    mOrientation = q;
 }
 
 template <class TVertex>
