@@ -53,47 +53,36 @@ int main() {
     mesh.SetPosition(glm::vec3(-8.3, 0., 9.8));
     mesh2.SetPosition(glm::vec3(-8.3, 0.5, 9.8));
     mesh2.SetScale(glm::vec3(1., .5, 1.));
-    mesh2.SetRotation(glm::vec3(-3.1415/2., 0., 0.));
+    mesh2.SetRotation(glm::vec3(3.1415/2., 0., 0.));
 
 
     Tube tube = {0.3, 3., 10};
     Sphere sp = {0.9, 10};
     sp.Translate(glm::vec3(-1.));
 
-    double dt = 0.0005;
-    auto Pendulum2 = DoublePendulum({0., 0.0}, 3.141592*0.9, -3.141592*0.1, 2., 1., dt);
     auto grid = GraphGrid(100, 1);
 
-    auto ps = ParticleSystem(glm::vec3(10., 0., 0.), glm::vec3(3., 2., 4.), 0.4, 100);
-    auto arrowx = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(1., 0., 0.)*0.6f, glm::vec3(1., 0., 0.));
-    auto arrowy = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
-    auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
+    //AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
+    AnimatedMesh animatedMesh = { "testExportLN.bvh", "bvh/skin.off", "bvh/weights.txt" };
 
+    AnimatedJoint::ARROW_SIZE = 0.15f;
 
-    AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
+    AnimatedJoint animatedJointRoot = AnimatedJoint                                 ("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
+    std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
+    std::shared_ptr<AnimatedJoint> animatedJoint2 = animatedJointRoot.AddChildren   ("AnimatedData/UARMR.txt", glm::vec3(0., 0.2, 0.6), "UArmR");
+    std::shared_ptr<AnimatedJoint> animatedJoint3 = animatedJoint1->AddChildren     ("AnimatedData/FARML.txt", glm::vec3(0., 0., .3), "FArmL");
+    std::shared_ptr<AnimatedJoint> animatedJoint4 = animatedJoint2->AddChildren     ("AnimatedData/FARMR.txt", glm::vec3(0., 0., .3), "FArmR");
+    animatedJoint3->SetEnd(glm::vec3(0., 0., .3));
+    animatedJoint4->SetEnd(glm::vec3(0., 0., .3));
 
-    AnimatedJoint animatedJoint1 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DF0_FARMR.txt", glm::vec3(-2., 4., 1.));
-    AnimatedJoint animatedJoint2 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DF3_PELV.txt", glm::vec3(-4., 4., 1.));
-    AnimatedJoint animatedJoint3 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DF7_UARML.txt", glm::vec3(-6., 4., 1.));
-    AnimatedJoint animatedJoint4 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DFA_FARML.txt", glm::vec3(-8., 4., 1.));
-    AnimatedJoint animatedJoint5 = AnimatedJoint("AnimatedData/MT_2024-01-08_14h42_000-combat008-round1_00B43DFB_UARMR.txt", glm::vec3(-10., 4., 1.));
-
-
+    auto a = Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
     Scene world;
     world.AddObject(&grid);
-    //world.AddObject(&Pendulum2);
+    world.AddObject(&a);
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
-    world.AddObject(&ps);
-    world.AddObject(&arrowx);
-    world.AddObject(&arrowy);
-    world.AddObject(&arrowz);
     world.AddObject(&animatedMesh);
-    world.AddObject(&animatedJoint1);
-    world.AddObject(&animatedJoint2);
-    world.AddObject(&animatedJoint3);
-    world.AddObject(&animatedJoint4);
-    world.AddObject(&animatedJoint5);
+    world.AddObject(&animatedJointRoot);
 
     InputManager inputManager(window, world);
     while (!glfwWindowShouldClose(window)) {
@@ -102,21 +91,13 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glStencilMask(0x00);
 
-        int32_t stepCount = static_cast<int32_t>(1./60./dt*.01);
-        for (int i = 0; i < stepCount; ++i) {
-            Pendulum2.Step2();
-        }
-
         static auto StartTime = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
         animatedMesh.Update(elapsed);
-        animatedJoint1.Update(elapsed);
-        animatedJoint2.Update(elapsed);
-        animatedJoint3.Update(elapsed);
-        animatedJoint4.Update(elapsed);
-        animatedJoint5.Update(elapsed);
+        animatedJointRoot.BuildMesh();
+        animatedJointRoot.Update(elapsed);
 
         world.Draw(inputManager.GetCamera());
 
@@ -125,6 +106,8 @@ int main() {
         glfwSwapBuffers(window);
         std::this_thread::sleep_until(startFrameTime+std::chrono::duration<double, std::ratio<1, 300>>(1));
     }
+
+    animatedJointRoot.ExportBVH("testExportLN.bvh");
 
     glfwTerminate();
 

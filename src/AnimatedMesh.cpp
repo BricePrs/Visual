@@ -18,7 +18,7 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     mSkeletonMesh = Mesh<SimpleVertex>(skeletonVertices, skeletonIndices);
     mSkeletonMesh.SetPrimitiveMode(GL_LINES);
     mSkeletonMesh.SetScale(glm::vec3(0.01));
-    mSkeletonMesh.SetPosition(glm::vec3(-10, -1., 10.));
+    mSkeletonMesh.SetPosition(glm::vec3(-4., 4., 1.));
     mSkeletonMesh.SetColor(glm::vec3(1., 0.3, 0.2));
 
     // -- Skin Set-up -- //
@@ -49,6 +49,8 @@ void AnimatedMesh::Update(double dt) {
     mSkeletonMesh.ChangeVertices(skeletonVertices);
 
     // -- Skin Update -- //
+
+
 
 
 }

@@ -118,6 +118,7 @@ public:
     glm::vec3 GetPosition() const;
     void SetPosition(glm::vec3 x);
     void SetRotation(glm::vec3 x);
+    void SetRotation(glm::quat x);
     void SetScale(glm::vec3 s);
     void SetColor(glm::vec3 color);
     void SetPrimitiveMode(GLenum mode);
