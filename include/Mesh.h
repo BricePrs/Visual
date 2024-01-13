@@ -133,13 +133,19 @@ public:
 
     void RecomputeVerticesAttributes();
 
-    int nb_vertices() const{
+    size_t GetNbVertices() const{
         return  mVertices.size();
     };
-    std::vector<TVertex> vertices() const{
+    std::vector<TVertex> GetVerticesCopy() const{
         return mVertices;
     }
-    std::vector<glm::uint32_t> indices() const{
+    std::vector<TVertex>& GetVertices() {
+        return mVertices;
+    }
+    std::vector<glm::uint32_t> GetIndicesCopy() const{
+        return mIndices;
+    }
+    std::vector<glm::uint32_t>& GetIndices() {
         return mIndices;
     }
 
@@ -176,7 +182,7 @@ private:
 };
 
 
-Mesh<SimpleVertex> ParseOFF(std::string fileName);
+Mesh<SimpleColorVertex> ParseOFF(std::string fileName);
 
 
 template class Mesh<SimpleVertex>;

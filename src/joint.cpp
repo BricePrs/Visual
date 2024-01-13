@@ -6,6 +6,9 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/color_space.hpp>
 
 using namespace std;
 
@@ -256,7 +259,13 @@ void Joint::buildSkeleton(std::vector<SimpleVertex> &vertices, std::vector<uint3
 
 Joint::Joint()
     : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0)
-{}
+{
+    // Generate a saturated random color
+    _color = glm::normalize(glm::vec3(
+                    glm::linearRand(0.0f, 1.0f),
+                    glm::linearRand(0.0f, 1.0f),
+                    glm::linearRand(0.0f, 1.0f)));
+}
 
 void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform){
     glm::mat4 childTransform = glm::mat4(1.);

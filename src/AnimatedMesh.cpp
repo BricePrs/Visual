@@ -24,6 +24,7 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     mSkeletonMesh.SetColor(glm::vec3(1., 0.3, 0.2));
 
     // -- Skin Set-up -- //
+
     mSkinMesh = ParseOFF(skinFileName);
     mSkinMeshTransformed = ParseOFF(skinFileName);
     // mSkinMesh.SetScale(glm::vec3(0.01));
@@ -34,17 +35,27 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     mSkinMeshTransformed.SetDrawMode(GL_LINE);
 
     // -- Weights Set-up -- //
+
     std::unordered_map<std::string, Joint *> jointMap; // Temporary map of joints
     mRootJoint->populateJointMap(jointMap);
     ParseWeights(weightsFileName, jointMap);
 
-    // assert(jointMap.size() == mSkeletonMesh.nb_vertices());
+    // assert(jointMap.size() == mSkeletonMesh.GetNbVertices());
     for(const auto &joint : jointArray){
         if (joint != nullptr){
             B_MJ[joint] = glm::inverse(joint->_transform);
         }
     }
 
+    auto &vertices = mSkinMesh.GetVertices();
+    for(int i = 0; i < vertices.size(); ++i) {
+        std::vector<std::pair<double, Joint *>> weight_array = weight[i];
+        vertices[i].color = glm::vec3(0.);
+        for (const auto& weight_pair : weight_array) {
+            vertices[i].color += static_cast<float>(weight_pair.first) * weight_pair.second->_color;
+        }
+    }
+    mSkinMesh.UpdateVerticesData();
 }
 
 void AnimatedMesh::ParseWeights(const std::string &weightsFileName, std::unordered_map<std::string, Joint *> &jointMap){
@@ -75,7 +86,7 @@ void AnimatedMesh::ParseWeights(const std::string &weightsFileName, std::unorder
         }
 
         // Parse the other lines
-        for (int i = 0; i < mSkinMesh.nb_vertices(); ++i){
+        for (int i = 0; i < mSkinMesh.GetNbVertices(); ++i){
             inputfile >> token;
             // std::cout << "PARSED TOKEN : " << token << std::endl;
             unsigned int index = std::stoi(token);
@@ -123,8 +134,8 @@ void AnimatedMesh::Update(double dt) {
         }
     }
 
-    std::vector<SimpleVertex> new_vertices;
-    std::vector<SimpleVertex> const &old_vertices = mSkinMesh.vertices();
+    std::vector<SimpleColorVertex> new_vertices;
+    std::vector<SimpleColorVertex> const &old_vertices = mSkinMesh.GetVertices();
     for(int i = 0; i < old_vertices.size(); ++i){
         glm::vec3 old_position = old_vertices[i].position;
         glm::vec3 new_position = glm::vec3(0.0, 0.0, 0.0);
@@ -142,7 +153,7 @@ void AnimatedMesh::Update(double dt) {
         }
         // std::cout << "NEW_POSITION " << new_position.x << " " << new_position.y << " " << new_position.z << std::endl;
         // std::cout << "counter : " << counter << std::endl;
-        new_vertices.push_back(new_position);
+        new_vertices.emplace_back(new_position, old_vertices[i].color);
     }
     mSkinMeshTransformed.ChangeVertices(new_vertices);
 }

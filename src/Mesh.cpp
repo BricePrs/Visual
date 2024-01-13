@@ -172,8 +172,8 @@ void Mesh<SimpleNormalVertex>::RecomputeVerticesAttributes() {
 }
 
 
-Mesh<SimpleVertex> ParseOFF(std::string fileName) {
-    std::vector<SimpleVertex> vertices;
+Mesh<SimpleColorVertex> ParseOFF(std::string fileName) {
+    std::vector<SimpleColorVertex> vertices;
     std::vector<uint32_t> indices;
     std::ifstream inputfile(fileName.data());
     if(inputfile.good()) {
@@ -197,7 +197,7 @@ Mesh<SimpleVertex> ParseOFF(std::string fileName) {
             float y = std::stof(buf, nullptr);
             inputfile >> buf;
             float z = std::stof(buf, nullptr);
-            vertices.emplace_back(x, y, z);
+            vertices.emplace_back(glm::vec3(x, y, z), glm::vec3(1.f));
         }
 
         for (int i = 0; i < indicesCount; ++i) {

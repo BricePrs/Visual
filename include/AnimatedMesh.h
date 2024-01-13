@@ -26,8 +26,8 @@ private:
     Mesh<SimpleVertex> mSkeletonMesh;
 
     // For Skinning
-    Mesh<SimpleVertex> mSkinMesh;
-    Mesh<SimpleVertex> mSkinMeshTransformed;
+    Mesh<SimpleColorVertex> mSkinMesh;
+    Mesh<SimpleColorVertex> mSkinMeshTransformed;
     void ParseWeights(const std::string &weightsFileName, std::unordered_map<std::string, Joint *> &jointMap);
     std::vector<std::vector<std::pair<double, Joint *>>> weight; // Size = nb a vertex in mSkinMesh
     std::vector<Joint *> jointArray; // Need to find joints in array which exist in the bvh

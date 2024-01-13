@@ -41,6 +41,8 @@ public :
 	std::vector<Joint*> _children;	// children of the current joint
 	glm::mat4 _transform; // Transform matrix joint basis to world basis
 
+    glm::vec3 _color;
+
 public :
 	// Constructor :
 	Joint();
