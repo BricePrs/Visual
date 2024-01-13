@@ -132,6 +132,15 @@ public:
 
     void RecomputeVerticesAttributes();
 
+    int nb_vertices() const{
+        return  mVertices.size();
+    };
+    std::vector<TVertex> vertices() const{
+        return mVertices;
+    }
+    std::vector<glm::uint32_t> indices() const{
+        return mIndices;
+    }
 
 private:
 

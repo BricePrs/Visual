@@ -187,7 +187,9 @@ void Joint::animateLerp(int iframe, double framePercent)
     glm::quat pr = glm::quat(glm::vec3(glm::radians(_curRx), glm::radians(_curRy), glm::radians(_curRz)));
     animate(iframe+1);
     glm::quat nr = glm::quat(glm::vec3(glm::radians(_curRx), glm::radians(_curRy), glm::radians(_curRz)));
-    _curTx = (1.-framePercent) * p_curTx + framePercent * _curTx ; _curTy = (1.-framePercent) * p_curTy + framePercent * _curTy ; _curTz = (1.-framePercent) * p_curTz + framePercent * _curTz ;
+    _curTx = (1.-framePercent) * p_curTx + framePercent * _curTx ;
+    _curTy = (1.-framePercent) * p_curTy + framePercent * _curTy ;
+    _curTz = (1.-framePercent) * p_curTz + framePercent * _curTz ;
     glm::vec3 res = glm::eulerAngles(glm::slerp(pr, nr, (float)framePercent));
     _curRx = glm::degrees(res.x);
     _curRy = glm::degrees(res.y);
@@ -259,7 +261,7 @@ Joint::Joint()
     : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0)
 {}
 
-void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform) const {
+void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform){
     glm::mat4 childTransform = glm::mat4(1.);
     for (auto &curve: _dofs) {
         if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
@@ -271,6 +273,7 @@ void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_
     childTransform[3][1] = (float)(_curTy + _offY);
     childTransform[3][2] = (float)(_curTz + _offZ);
 
+    this->_transform = transform * childTransform;
     childTransform = transform * childTransform;
 
     for (auto &child: _children) {
@@ -281,5 +284,12 @@ void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_
     }
     if (_children.empty()) {
         vertices.emplace_back(glm::vec3(childTransform*glm::vec4(0., 0., 0., 1.)));
+    }
+}
+
+void Joint::populateJointMap(std::unordered_map<std::string, Joint *> &jointMap) {
+    jointMap.insert(std::make_pair(this->_name, this));
+    for (auto &child: _children) {
+        child->populateJointMap(jointMap);
     }
 }
