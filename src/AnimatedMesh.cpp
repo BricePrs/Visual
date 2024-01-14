@@ -125,8 +125,9 @@ void AnimatedMesh::Update(double dt) {
     // -- Skin Update -- //
     mRootJoint->transformMatrices(C_JM, glm::mat4(1.));
 
-    std::vector<SimpleColorVertex> new_vertices;
     std::vector<SimpleColorVertex> const &old_vertices = mSkinMesh.GetVertices();
+    std::vector<SimpleColorVertex> new_vertices;
+    new_vertices.reserve(old_vertices.size());
     for(int i = 0; i < old_vertices.size(); ++i){
         glm::vec4 old_position = glm::vec4(old_vertices[i].position, 1.f);
         glm::vec4 new_position = glm::vec4(0.0, 0.0, 0.0, 0.f);
@@ -163,6 +164,7 @@ void AnimatedMesh::Update(double dt) {
 }
 
 void AnimatedMesh::Draw(const PerspectiveCamera &camera) {
+    mRootJoint->Draw(camera);
     mSkeletonMesh.Draw(camera);
     mSkinMeshTransformed.Draw(camera);
 }

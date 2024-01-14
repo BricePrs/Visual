@@ -65,6 +65,9 @@ int main() {
     AnimatedJoint::ARROW_SIZE = 0.15f;
 
     AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
+    Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
+    skinMesh.SetScale(glm::vec3(0.01f));
+    skinMesh.SetDrawMode(GL_LINE);
 
     AnimatedJoint animatedJointRoot = AnimatedJoint                                 ("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
     std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
@@ -81,6 +84,7 @@ int main() {
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
     world.AddObject(&animatedMesh);
+    world.AddObject(&skinMesh);
 
     world.AddObject(&animatedJointRoot);
 
@@ -95,7 +99,7 @@ int main() {
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
-        animatedMesh.Update(elapsed);
+        animatedMesh.Update(elapsed*0.1);
 
         animatedJointRoot.BuildMesh();
         animatedJointRoot.Update(elapsed);
