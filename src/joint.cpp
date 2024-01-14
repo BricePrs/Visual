@@ -273,14 +273,14 @@ Joint::Joint()
 void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform){
     glm::mat4 childTransform = glm::mat4(1.);
     for (auto &curve: _dofs) {
-        //if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
-        //if(!curve.name.compare("Yrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
-        //if(!curve.name.compare("Xrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
+        if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
+        if(!curve.name.compare("Yrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
+        if(!curve.name.compare("Xrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
     }
 
-    childTransform[3][0] = (float)(_offX);
-    childTransform[3][1] = (float)(_offY);
-    childTransform[3][2] = (float)(_offZ);
+    childTransform[3][0] = (float)(_curTx+_offX);
+    childTransform[3][1] = (float)(_curTy+_offY);
+    childTransform[3][2] = (float)(_curTz+_offZ);
 
     childTransform = transform * childTransform;
 
