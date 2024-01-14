@@ -149,6 +149,10 @@ public:
         return mIndices;
     }
 
+    void setModel(const std::optional<glm::mat4> &model) {
+        Mesh::mModel = model;
+    }
+
 private:
 
     void SetVaoAttrib();
@@ -161,6 +165,7 @@ private:
     bool mIsHovered;
     bool mIsSelected;
     glm::quat mOrientation;
+    std::optional<glm::mat4> mModel;
     glm::vec3 mScale = glm::vec3(1.);
 
     std::optional<Texture> mTexture;

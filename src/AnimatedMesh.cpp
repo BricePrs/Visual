@@ -38,7 +38,7 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     mRootJoint->populateJointMap(jointMap);
     ParseWeights(weightsFileName, jointMap);
     // assert(jointMap.size() == mSkeletonMesh.GetNbVertices());
-    mRootJoint->transformMatricesBinding(B_MJ, glm::mat4(1.));
+    mRootJoint->transformMatricesBinding(B_MJ, glm::mat4(1.), true);
 
     auto &vertices = mSkinMesh.GetVertices();
     for(int i = 0; i < vertices.size(); ++i) {
@@ -132,7 +132,6 @@ void AnimatedMesh::Update(double dt) {
         glm::vec4 old_position = glm::vec4(old_vertices[i].position, 1.f);
         glm::vec4 new_position = glm::vec4(0.0, 0.0, 0.0, 0.f);
         std::vector<std::pair<double, Joint *>> weight_array = weight[i];
-        assert(weight_array.size() != 0);
         int counter = 0;
         double sum_weight = 0;
         glm::mat4 accumulateTransform = glm::mat4(0);
@@ -149,7 +148,7 @@ void AnimatedMesh::Update(double dt) {
             // K = glm::identity<glm::mat4>();
             // K = glm::angleAxis(glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-            accumulateTransform = accumulateTransform + (static_cast<float>(weight/sum_weight))*K;
+            accumulateTransform = accumulateTransform+static_cast<float>(weight/sum_weight)*K;
             // new_position = new_position + (static_cast<float>(weight/sum_weight))*K*old_position;
             // std::cout << "weight " << weight << std::endl;
         }

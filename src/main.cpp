@@ -64,7 +64,7 @@ int main() {
 
     AnimatedJoint::ARROW_SIZE = 0.15f;
 
-    AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
+    AnimatedMesh animatedMesh = { "bvh/cartwheel.bvh", "bvh/skin.off", "bvh/weights.txt" };
     Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
     skinMesh.SetScale(glm::vec3(0.01f));
     skinMesh.SetDrawMode(GL_LINE);
@@ -99,7 +99,7 @@ int main() {
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
-        animatedMesh.Update(elapsed*0.1);
+        animatedMesh.Update(elapsed*0.8);
 
         animatedJointRoot.BuildMesh();
         animatedJointRoot.Update(elapsed);

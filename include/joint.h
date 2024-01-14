@@ -93,7 +93,8 @@ public :
 	// For Skinning
     void populateJointMap(std::unordered_map<std::string, Joint *> &jointMap);
 	void transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform);
-	void transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform);
+	void transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform,
+                                  bool IsRoot);
 
     void Draw(const PerspectiveCamera &camera) override;
 };

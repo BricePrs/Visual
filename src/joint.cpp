@@ -273,14 +273,14 @@ Joint::Joint()
 void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform){
     glm::mat4 childTransform = glm::mat4(1.);
     for (auto &curve: _dofs) {
-        if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
-        if(!curve.name.compare("Yrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
-        if(!curve.name.compare("Xrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
+        //if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
+        //if(!curve.name.compare("Yrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
+        //if(!curve.name.compare("Xrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
     }
 
-    childTransform[3][0] = (float)(_curTx + _offX);
-    childTransform[3][1] = (float)(_curTy + _offY);
-    childTransform[3][2] = (float)(_curTz + _offZ);
+    childTransform[3][0] = (float)(_offX);
+    childTransform[3][1] = (float)(_offY);
+    childTransform[3][2] = (float)(_offZ);
 
     childTransform = transform * childTransform;
 
@@ -310,19 +310,26 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
         if(!curve.name.compare("Xrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
     }
 
-    transform[3][0] = (float)(_curTx + _offX);
-    transform[3][1] = (float)(_curTy + _offY);
-    transform[3][2] = (float)(_curTz + _offZ);
+    transform[3][0] = (float)(_curTx+_offX);
+    transform[3][1] = (float)(_curTy+_offY);
+    transform[3][2] = (float)(_curTz+_offZ);
 
     transform = parentTransform * transform;
 
-    _ArrowX.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-    _ArrowY.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-    _ArrowZ.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
+    //_ArrowX.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
+    //_ArrowY.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
+    //_ArrowZ.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
 
-    _ArrowX.SetRotation(transform);
-    _ArrowY.SetRotation(transform);
-    _ArrowZ.SetRotation(transform);
+    //_ArrowX.SetRotation(glm::quat_cast(transform));
+    //_ArrowY.SetRotation(glm::quat_cast(transform));
+    //_ArrowZ.SetRotation(glm::quat_cast(transform));
+    auto arrowTransform = transform;
+    arrowTransform[3][0]*=0.01f;
+    arrowTransform[3][1]*=0.01f;
+    arrowTransform[3][2]*=0.01f;
+    _ArrowX.setModel(arrowTransform);
+    _ArrowY.setModel(arrowTransform);
+    _ArrowZ.setModel(arrowTransform);
 
     matrices[this] = transform;
     float norm = 0.0f;
@@ -341,7 +348,7 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
     }
 }
 
-void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform){
+void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform,bool IsRoot) {
     glm::mat4 transform = glm::mat4(1.);
     // partie inutile pour la binding pose
     // glm::mat4 rotationX = glm::mat4(1.);
@@ -359,9 +366,11 @@ void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &mat
     //
     // transform = rotationZ * rotationY * rotationX;
 
-    transform[3][0] = (float)(-_offX);
-    transform[3][1] = (float)(-_offY);
-    transform[3][2] = (float)(-_offZ);
+    if (!IsRoot) {
+        transform[3][0] = (float) (-_offX);
+        transform[3][1] = (float) (-_offY);
+        transform[3][2] = (float) (-_offZ);
+    }
 
     transform = transform * parentTransform;
 
@@ -376,10 +385,10 @@ void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &mat
 
     norm = std::sqrt(norm);
     std::cout << "Name = " << _name << " norm " << norm << std::endl;
-    assert(norm < 1000);
+    //assert(norm < 1000);
 
     for (auto &child: _children) {
-        child->transformMatricesBinding(matrices, transform);
+        child->transformMatricesBinding(matrices, transform, false);
     }
 }
 
