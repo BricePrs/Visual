@@ -316,13 +316,6 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
 
     transform = parentTransform * transform;
 
-    //_ArrowX.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-    //_ArrowY.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-    //_ArrowZ.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-
-    //_ArrowX.SetRotation(glm::quat_cast(transform));
-    //_ArrowY.SetRotation(glm::quat_cast(transform));
-    //_ArrowZ.SetRotation(glm::quat_cast(transform));
     auto arrowTransform = transform;
     arrowTransform[3][0]*=0.01f;
     arrowTransform[3][1]*=0.01f;
@@ -332,63 +325,25 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
     _ArrowZ.setModel(arrowTransform);
 
     matrices[this] = transform;
-    float norm = 0.0f;
-
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            norm += matrices[this][i][j] * matrices[this][i][j];
-        }
-    }
-    norm = std::sqrt(norm);
-    // std::cout << "Name = " << _name << " norm " << norm << std::endl;
-    // assert(std::abs(norm - 1) < 0.1);
 
     for (auto &child: _children) {
         child->transformMatrices(matrices, transform);
     }
 }
 
-void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform,bool IsRoot) {
+void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform) {
     glm::mat4 transform = glm::mat4(1.);
-    // partie inutile pour la binding pose
-    // glm::mat4 rotationX = glm::mat4(1.);
-    // glm::mat4 rotationY = glm::mat4(1.);
-    // glm::mat4 rotationZ = glm::mat4(1.);
-    //
-    // for (auto &curve: _dofs) {
-    //     if(!curve.name.compare("Zrotation"))
-    //         rotationZ = glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
-    //     if(!curve.name.compare("Yrotation"))
-    //         rotationY = glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
-    //     if(!curve.name.compare("Xrotation"))
-    //         rotationX = glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
-    // }
-    //
-    // transform = rotationZ * rotationY * rotationX;
 
-    if (!IsRoot) {
-        transform[3][0] = (float) (-_offX);
-        transform[3][1] = (float) (-_offY);
-        transform[3][2] = (float) (-_offZ);
-    }
+    transform[3][0] = (float) (-_offX);
+    transform[3][1] = (float) (-_offY);
+    transform[3][2] = (float) (-_offZ);
 
     transform = transform * parentTransform;
 
     matrices[this] = transform;
-    float norm = 0.0f;
-
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            norm += matrices[this][i][j] * matrices[this][i][j];
-        }
-    }
-
-    norm = std::sqrt(norm);
-    std::cout << "Name = " << _name << " norm " << norm << std::endl;
-    //assert(norm < 1000);
 
     for (auto &child: _children) {
-        child->transformMatricesBinding(matrices, transform, false);
+        child->transformMatricesBinding(matrices, transform);
     }
 }
 
