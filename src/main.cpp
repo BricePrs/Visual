@@ -64,16 +64,16 @@ int main() {
 
     AnimatedJoint::ARROW_SIZE = 0.15f;
 
-    AnimatedMesh animatedMesh = { "bvh/cartwheel.bvh", "bvh/skin.off", "bvh/weights.txt" };
-    Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
-    skinMesh.SetScale(glm::vec3(0.01f));
-    skinMesh.SetDrawMode(GL_LINE);
+    AnimatedMesh animatedMesh = { "testExportLN.bvh", "bvh/skin.off", "bvh/weights.txt" };
+    // Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
+    // skinMesh.SetScale(glm::vec3(0.01f));
+    // skinMesh.SetDrawMode(GL_LINE);
 
-    AnimatedJoint animatedJointRoot = AnimatedJoint                                 ("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
-    std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
-    std::shared_ptr<AnimatedJoint> animatedJoint2 = animatedJointRoot.AddChildren   ("AnimatedData/UARMR.txt", glm::vec3(0., 0.2, 0.6), "UArmR");
-    std::shared_ptr<AnimatedJoint> animatedJoint3 = animatedJoint1->AddChildren     ("AnimatedData/FARML.txt", glm::vec3(0., 0., .3), "FArmL");
-    std::shared_ptr<AnimatedJoint> animatedJoint4 = animatedJoint2->AddChildren     ("AnimatedData/FARMR.txt", glm::vec3(0., 0., .3), "FArmR");
+    AnimatedJoint animatedJointRoot = AnimatedJoint                                 ("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "hips"); // X = Back Z = Up, Y = Right
+    std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "l_shoulder");
+    std::shared_ptr<AnimatedJoint> animatedJoint2 = animatedJointRoot.AddChildren   ("AnimatedData/UARMR.txt", glm::vec3(0., 0.2, 0.6), "r_shoulder");
+    std::shared_ptr<AnimatedJoint> animatedJoint3 = animatedJoint1->AddChildren     ("AnimatedData/FARML.txt", glm::vec3(0., 0., .3), "l_elbow");
+    std::shared_ptr<AnimatedJoint> animatedJoint4 = animatedJoint2->AddChildren     ("AnimatedData/FARMR.txt", glm::vec3(0., 0., .3), "r_elbow");
     animatedJoint3->SetEnd(glm::vec3(0., 0., .3));
     animatedJoint4->SetEnd(glm::vec3(0., 0., .3));
 
@@ -84,7 +84,7 @@ int main() {
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
     world.AddObject(&animatedMesh);
-    world.AddObject(&skinMesh);
+    // world.AddObject(&skinMesh);
 
     world.AddObject(&animatedJointRoot);
 
@@ -99,7 +99,7 @@ int main() {
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
-        animatedMesh.Update(elapsed*0.8);
+        animatedMesh.Update(elapsed);
 
         animatedJointRoot.BuildMesh();
         animatedJointRoot.Update(elapsed);

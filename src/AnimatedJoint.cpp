@@ -167,7 +167,7 @@ void AnimatedJoint::WriteJoint(std::ofstream &outStream, const std::string &type
         child->WriteJoint(outStream, "JOINT", newPrefix);
     }
     if (mEndPos.has_value()) {
-        outStream << newPrefix << "End end_" << mName << "\n";
+        outStream << newPrefix << "End " << mName << "_End\n";
         outStream << newPrefix << "{\n";
         outStream << newPrefix << "\t" << "OFFSET " << mEndPos.value().x*SCALE_FACTOR << " " << mEndPos.value().y*SCALE_FACTOR << " " << mEndPos.value().z*SCALE_FACTOR << "\n"; // SCALING VALUES
         outStream << newPrefix << "}\n";
