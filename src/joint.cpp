@@ -279,7 +279,6 @@ void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_
     childTransform[3][1] = (float)(_curTy + _offY);
     childTransform[3][2] = (float)(_curTz + _offZ);
 
-    this->_transform = transform * childTransform;
     childTransform = transform * childTransform;
 
     for (auto &child: _children) {
@@ -297,5 +296,78 @@ void Joint::populateJointMap(std::unordered_map<std::string, Joint *> &jointMap)
     jointMap.insert(std::make_pair(this->_name, this));
     for (auto &child: _children) {
         child->populateJointMap(jointMap);
+    }
+}
+
+void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform){
+    glm::mat4 transform = glm::mat4(1.);
+    // for (auto &curve: _dofs) {
+    //     if(!curve.name.compare("Zrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
+    //     if(!curve.name.compare("Yrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
+    //     if(!curve.name.compare("Xrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
+    // }
+
+    transform[3][0] = (float)(_curTx + _offX);
+    transform[3][1] = (float)(_curTy + _offY);
+    transform[3][2] = (float)(_curTz + _offZ);
+
+    transform = parentTransform * transform;
+
+    matrices[this] = transform;
+    float norm = 0.0f;
+
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            norm += matrices[this][i][j] * matrices[this][i][j];
+        }
+    }
+    norm = std::sqrt(norm);
+    // std::cout << "Name = " << _name << " norm " << norm << std::endl;
+    // assert(std::abs(norm - 1) < 0.1);
+
+    for (auto &child: _children) {
+        child->transformMatrices(matrices, transform);
+    }
+}
+
+void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform){
+    glm::mat4 transform = glm::mat4(1.);
+    // partie inutile pour la binding pose
+    // glm::mat4 rotationX = glm::mat4(1.);
+    // glm::mat4 rotationY = glm::mat4(1.);
+    // glm::mat4 rotationZ = glm::mat4(1.);
+    //
+    // for (auto &curve: _dofs) {
+    //     if(!curve.name.compare("Zrotation"))
+    //         rotationZ = glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
+    //     if(!curve.name.compare("Yrotation"))
+    //         rotationY = glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
+    //     if(!curve.name.compare("Xrotation"))
+    //         rotationX = glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
+    // }
+    //
+    // transform = rotationZ * rotationY * rotationX;
+
+    transform[3][0] = (float)(-_offX);
+    transform[3][1] = (float)(-_offY);
+    transform[3][2] = (float)(-_offZ);
+
+    transform = transform * parentTransform;
+
+    matrices[this] = transform;
+    float norm = 0.0f;
+
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            norm += matrices[this][i][j] * matrices[this][i][j];
+        }
+    }
+
+    norm = std::sqrt(norm);
+    std::cout << "Name = " << _name << " norm " << norm << std::endl;
+    assert(norm < 1000);
+
+    for (auto &child: _children) {
+        child->transformMatricesBinding(matrices, transform);
     }
 }

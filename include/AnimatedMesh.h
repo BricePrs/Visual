@@ -31,9 +31,8 @@ private:
     void ParseWeights(const std::string &weightsFileName, std::unordered_map<std::string, Joint *> &jointMap);
     std::vector<std::vector<std::pair<double, Joint *>>> weight; // Size = nb a vertex in mSkinMesh
     std::vector<Joint *> jointArray; // Need to find joints in array which exist in the bvh
-    // std::vector<glm::quat> B_MJ;
-    std::unordered_map<Joint *, glm::quat> B_MJ;
-    std::unordered_map<Joint *, glm::quat> C_JM;
+    std::unordered_map<Joint *, glm::mat4> B_MJ;
+    std::unordered_map<Joint *, glm::mat4> C_JM;
 };
 
 

@@ -20,32 +20,25 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     mSkeletonMesh = Mesh<SimpleVertex>(skeletonVertices, skeletonIndices);
     mSkeletonMesh.SetPrimitiveMode(GL_LINES);
     mSkeletonMesh.SetScale(glm::vec3(0.01));
-    mSkeletonMesh.SetPosition(glm::vec3(-4., 4., 1.));
-    mSkeletonMesh.SetColor(glm::vec3(1., 0.3, 0.2));
+    // mSkeletonMesh.SetPosition(glm::vec3(-4., 4., 1.));
+    // mSkeletonMesh.SetColor(glm::vec3(1., 0.3, 0.2));
 
     // -- Skin Set-up -- //
-
     mSkinMesh = ParseOFF(skinFileName);
     mSkinMeshTransformed = ParseOFF(skinFileName);
-    // mSkinMesh.SetScale(glm::vec3(0.01));
+    mSkinMesh.SetScale(glm::vec3(0.01));
     // mSkinMesh.SetPosition({-3, 1., 0.});
     // mSkinMesh.SetDrawMode(GL_LINE);
     mSkinMeshTransformed.SetScale(glm::vec3(0.01));
-    mSkinMeshTransformed.SetPosition({-3, 1., 0.});
+    // mSkinMeshTransformed.SetPosition({3, 1., 3});
     mSkinMeshTransformed.SetDrawMode(GL_LINE);
 
     // -- Weights Set-up -- //
-
     std::unordered_map<std::string, Joint *> jointMap; // Temporary map of joints
     mRootJoint->populateJointMap(jointMap);
     ParseWeights(weightsFileName, jointMap);
-
     // assert(jointMap.size() == mSkeletonMesh.GetNbVertices());
-    for(const auto &joint : jointArray){
-        if (joint != nullptr){
-            B_MJ[joint] = glm::inverse(joint->_transform);
-        }
-    }
+    mRootJoint->transformMatricesBinding(B_MJ, glm::mat4(1.));
 
     auto &vertices = mSkinMesh.GetVertices();
     for(int i = 0; i < vertices.size(); ++i) {
@@ -107,7 +100,7 @@ void AnimatedMesh::ParseWeights(const std::string &weightsFileName, std::unorder
 
         inputfile.close();
     } else {
-        std::cerr << "Failed to load the OFF file " << weightsFileName.c_str() << std::endl;
+        std::cerr << "Failed to load the weight file " << weightsFileName.c_str() << std::endl;
         fflush(stdout);
     }
 }
@@ -121,39 +114,50 @@ void AnimatedMesh::Update(double dt) {
     double framePercent = animationTime-frameNumber;
 
     mRootJoint->animateLerp(frameNumber, framePercent);
+    // mRootJoint->animate(frameNumber);
     std::vector<SimpleVertex> skeletonVertices;
     std::vector<uint32_t> skeletonIndices; // Not used
 
     mRootJoint->buildSkeletonMatrices(skeletonVertices, skeletonIndices, glm::mat4(1.));
     mSkeletonMesh.ChangeVertices(skeletonVertices);
 
+
     // -- Skin Update -- //
-    for(const auto &joint : jointArray){
-        if (joint != nullptr){
-            C_JM[joint] = joint->_transform;
-        }
-    }
+    mRootJoint->transformMatrices(C_JM, glm::mat4(1.));
 
     std::vector<SimpleColorVertex> new_vertices;
     std::vector<SimpleColorVertex> const &old_vertices = mSkinMesh.GetVertices();
     for(int i = 0; i < old_vertices.size(); ++i){
-        glm::vec3 old_position = old_vertices[i].position;
-        glm::vec3 new_position = glm::vec3(0.0, 0.0, 0.0);
+        glm::vec4 old_position = glm::vec4(old_vertices[i].position, 1.f);
+        glm::vec4 new_position = glm::vec4(0.0, 0.0, 0.0, 0.f);
         std::vector<std::pair<double, Joint *>> weight_array = weight[i];
         assert(weight_array.size() != 0);
         int counter = 0;
+        double sum_weight = 0;
+        glm::mat4 accumulateTransform = glm::mat4(0);
+        for (const auto& weight_pair : weight_array) {
+            double weight = weight_pair.first;
+            counter++;
+            sum_weight += weight;
+        }
         for (const auto& weight_pair : weight_array) {
             double weight = weight_pair.first;
             Joint* jointPtr = weight_pair.second;
-            glm::quat K = C_JM[jointPtr]*B_MJ[jointPtr];
-            new_position = new_position + (static_cast<float>(weight)*old_position);
-            counter++;
-            // new_position = old_position;
+            glm::mat4 K = C_JM[jointPtr]*B_MJ[jointPtr];
+            // glm::mat4 K = C_JM[jointPtr];
+            // K = glm::identity<glm::mat4>();
+            // K = glm::angleAxis(glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            accumulateTransform = accumulateTransform + (static_cast<float>(weight/sum_weight))*K;
+            // new_position = new_position + (static_cast<float>(weight/sum_weight))*K*old_position;
             // std::cout << "weight " << weight << std::endl;
         }
+        new_position = accumulateTransform * old_position;
+        // std::cout << "sum_weight " << sum_weight << std::endl;
+        // assert(std::abs(1 - sum_weight) <= 0.9);
         // std::cout << "NEW_POSITION " << new_position.x << " " << new_position.y << " " << new_position.z << std::endl;
         // std::cout << "counter : " << counter << std::endl;
-        new_vertices.emplace_back(new_position, old_vertices[i].color);
+        new_vertices.emplace_back(glm::vec3(new_position)/new_position.w, old_vertices[i].color);
     }
     mSkinMeshTransformed.ChangeVertices(new_vertices);
 }

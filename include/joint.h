@@ -39,8 +39,6 @@ public :
 	double _curRz;						// current value of rotation about Z (deg)
 	int _rorder;						// order of euler angles to reconstruct rotation
 	std::vector<Joint*> _children;	// children of the current joint
-	glm::mat4 _transform; // Transform matrix joint basis to world basis
-
     glm::vec3 _color;
 
 public :
@@ -90,6 +88,8 @@ public :
 
 	// For Skinning
     void populateJointMap(std::unordered_map<std::string, Joint *> &jointMap);
+	void transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform);
+	void transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform);
 };
 
 
