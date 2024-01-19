@@ -187,7 +187,7 @@ private:
 };
 
 
-Mesh<SimpleColorVertex> ParseOFF(std::string fileName);
+Mesh<SimpleNormalVertex> ParseOFF(std::string fileName);
 
 
 template class Mesh<SimpleVertex>;

@@ -114,6 +114,7 @@ void Mesh<TVertex>::UpdateIndicesData() {
 }
 
 
+
 template <class TVertex>
 void Mesh<TVertex>::SelectShaderProgram() {
     if constexpr (std::is_same<TVertex, SimpleVertex>::value) {
@@ -128,6 +129,7 @@ void Mesh<TVertex>::SelectShaderProgram() {
         // Do nothing
     }
 }
+
 
 template <class TVertex>
 void Mesh<TVertex>::SetVaoAttrib() {
@@ -172,8 +174,8 @@ void Mesh<SimpleNormalVertex>::RecomputeVerticesAttributes() {
 }
 
 
-Mesh<SimpleColorVertex> ParseOFF(std::string fileName) {
-    std::vector<SimpleColorVertex> vertices;
+Mesh<SimpleNormalVertex> ParseOFF(std::string fileName) {
+    std::vector<SimpleNormalVertex> vertices;
     std::vector<uint32_t> indices;
     std::ifstream inputfile(fileName.data());
     if(inputfile.good()) {
@@ -197,7 +199,7 @@ Mesh<SimpleColorVertex> ParseOFF(std::string fileName) {
             float y = std::stof(buf, nullptr);
             inputfile >> buf;
             float z = std::stof(buf, nullptr);
-            vertices.emplace_back(glm::vec3(x, y, z), glm::vec3(1.f));
+            vertices.emplace_back(glm::vec3(x, y, z), glm::vec3(0.f));
         }
 
         for (int i = 0; i < indicesCount; ++i) {
