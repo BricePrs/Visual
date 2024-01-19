@@ -23,6 +23,7 @@ void AnimatedJoint::Update(double dt) {
     auto frameNumber = static_cast<uint32_t>(trunc(animationTime));
     double framePercent = animationTime-frameNumber;
     mCurrentOrientation = glm::slerp(mOrientations[frameNumber], mOrientations[(frameNumber+1)%mFrameCount], (float)framePercent);
+    //mCurrentOrientation = glm::vec3(0.);
     mArrowX.SetRotation(mCurrentOrientation);
     mArrowY.SetRotation(mCurrentOrientation);
     mArrowZ.SetRotation(mCurrentOrientation);
@@ -54,6 +55,7 @@ AnimatedJoint::AnimatedJoint(const std::string &fileName, glm::vec3 position, co
     mArrowX.SetPosition(position);
     mArrowY.SetPosition(position);
     mArrowZ.SetPosition(position);
+
 
     std::ifstream inputfile(fileName.data());
     if(inputfile.good()) {

@@ -13,7 +13,7 @@
 class AnimatedJoint : public Drawable {
 public:
 
-    AnimatedJoint(const std::string& fileName, glm::vec3 position, const std::string &name = {});
+    AnimatedJoint(const std::string &fileName, glm::vec3 position, const std::string &name);
 
     void Update(double dt);
     void Draw(const PerspectiveCamera &camera) override;

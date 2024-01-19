@@ -161,7 +161,7 @@ void Joint::animate(int iframe)
     for (unsigned int idof = 0 ; idof < _dofs.size() ; idof++) {
         if (_children.empty()) continue;
         if (_dofs[idof]._values.size() <= iframe) {
-            std::cout << "Max value is " << _dofs[idof]._values.size() << " but asked for " << iframe << std::endl;
+            //std::cout << "Max value is " << _dofs[idof]._values.size() << " but asked for " << iframe << std::endl;
             continue;
         }
         if(!_dofs[idof].name.compare("Xposition")) _curTx = _dofs[idof]._values[iframe];
@@ -261,13 +261,15 @@ Joint::Joint()
     : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0),
       _ArrowX(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(1., 0., 0.)*0.15f, glm::vec3(1., 0., 0.))),
       _ArrowY(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 1., 0.)*0.15f, glm::vec3(0., 1., 0.))),
-      _ArrowZ(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 0., 1.)*0.15f, glm::vec3(0., 0., 1.)))
+      _ArrowZ(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 0., 1.)*0.15f, glm::vec3(0., 0., 1.))),
+      _Box(WireframeBox(glm::vec3(0.), glm::vec3(0.01), glm::vec3(1., 0.4, 0.1), glm::vec3(-1., 0., -1.), glm::vec3(1., 2., 1.)))
 {
     // Generate a saturated random color
     _color = glm::normalize(glm::vec3(
                     glm::linearRand(0.0f, 1.0f),
                     glm::linearRand(0.0f, 1.0f),
                     glm::linearRand(0.0f, 1.0f)));
+
 }
 
 void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform){
@@ -316,13 +318,6 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
 
     transform = parentTransform * transform;
 
-    //_ArrowX.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-    //_ArrowY.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-    //_ArrowZ.SetPosition(0.01f*glm::vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]));
-
-    //_ArrowX.SetRotation(glm::quat_cast(transform));
-    //_ArrowY.SetRotation(glm::quat_cast(transform));
-    //_ArrowZ.SetRotation(glm::quat_cast(transform));
     auto arrowTransform = transform;
     arrowTransform[3][0]*=0.01f;
     arrowTransform[3][1]*=0.01f;
@@ -330,7 +325,31 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
     _ArrowX.setModel(arrowTransform);
     _ArrowY.setModel(arrowTransform);
     _ArrowZ.setModel(arrowTransform);
+    if (!_IsRoot) {
+        auto boxTransform = parentTransform;
+        auto offset = glm::vec3(_offX*0.01, _offY*0.01, _offZ*0.01);
+        float l = glm::length(glm::vec3(offset));
+        glm::vec3 mainAxis;
+        if (offset.x > offset.y && offset.x > offset.z) {
+            mainAxis = glm::vec3(1., 0., .0);
+        } else if (offset.y > offset.x && offset.y > offset.z) {
+            mainAxis = glm::vec3(0., 1., .0);
+        } else {
+            mainAxis = glm::vec3(0., 0., 1.);
+        }
 
+        _Box = WireframeBox(
+                glm::vec3(0.),
+                glm::vec3(0.01),
+                glm::vec3(1., 0.4, 0.1),
+                glm::vec3(-0.1f*l)*(glm::vec3(1.)-mainAxis),
+                glm::vec3(0.1f*l)*(glm::vec3(1.)-mainAxis)+glm::vec3(_offX*0.01, _offY*0.01, _offZ*0.01)
+            );
+        boxTransform[3][0]*=0.01f;
+        boxTransform[3][1]*=0.01f;
+        boxTransform[3][2]*=0.01f;
+        _Box.setModel(boxTransform);
+    }
     matrices[this] = transform;
     float norm = 0.0f;
 
@@ -385,8 +404,6 @@ void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &mat
 
     norm = std::sqrt(norm);
     std::cout << "Name = " << _name << " norm " << norm << std::endl;
-    //assert(norm < 1000);
-
     for (auto &child: _children) {
         child->transformMatricesBinding(matrices, transform, false);
     }
@@ -396,6 +413,9 @@ void Joint::Draw(const PerspectiveCamera &camera) {
     _ArrowX.Draw(camera);
     _ArrowY.Draw(camera);
     _ArrowZ.Draw(camera);
+    if (!_IsRoot) {
+        //_Box.Draw(camera);
+    }
     for (auto & child: _children) {
         child->Draw(camera);
     }

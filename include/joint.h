@@ -41,9 +41,12 @@ public :
 	std::vector<Joint*> _children;	// children of the current joint
     glm::vec3 _color;
 
-    Arrow3D _ArrowX;
-    Arrow3D _ArrowY;
-    Arrow3D _ArrowZ;
+    Arrow3D         _ArrowX;
+    Arrow3D         _ArrowY;
+    Arrow3D         _ArrowZ;
+    WireframeBox    _Box;
+
+    bool _IsRoot = false;
 
 public :
 	// Constructor :

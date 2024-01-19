@@ -244,17 +244,18 @@ private:
     Mesh<SimpleVertex> mScaleGrid;
 };
 
-class WireframeBox : public Drawable {
+class WireframeBox : public Mesh<SimpleVertex> {
 public:
 
-    WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color);
+    WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color, glm::vec3 minBound = glm::vec3(-1.), glm::vec3 maxBound = glm::vec3(1.));
 
     void Draw(const PerspectiveCamera &camera) override;
     void UpdateBox(glm::vec3 center, glm::vec3 sides);
 
 private:
 
-    Mesh<SimpleVertex> mMesh;
+    static std::vector<SimpleVertex> BuildMeshVertices(glm::vec3 minBound, glm::vec3 maxBound);
+    static std::vector<uint32_t> BuildMeshIndices();
 
 };
 

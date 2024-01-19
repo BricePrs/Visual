@@ -12,6 +12,7 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     // -- Skeleton Set-up -- //
 
     mRootJoint = Joint::createFromFile(skeletonFileName, mFrameCount, mFrameTime);
+    mRootJoint->_IsRoot = true;
     
     std::vector<SimpleVertex> skeletonVertices;
     std::vector<uint32_t> skeletonIndices;
@@ -164,6 +165,8 @@ void AnimatedMesh::Update(double dt) {
 
 void AnimatedMesh::Draw(const PerspectiveCamera &camera) {
     mRootJoint->Draw(camera);
+    glLineWidth(4.f);
     mSkeletonMesh.Draw(camera);
+    glLineWidth(1.f);
     mSkinMeshTransformed.Draw(camera);
 }
