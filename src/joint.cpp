@@ -357,7 +357,7 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
     }
 }
 
-void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform) {
+void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform, bool IsRoot) {
     glm::mat4 transform = glm::mat4(1.);
 
     transform[3][0] = (float) (-_offX);

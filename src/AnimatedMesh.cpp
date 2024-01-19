@@ -39,7 +39,7 @@ AnimatedMesh::AnimatedMesh(const std::string &skeletonFileName, const std::strin
     mRootJoint->populateJointMap(jointMap);
     ParseWeights(weightsFileName, jointMap);
     // assert(jointMap.size() == mSkeletonMesh.GetNbVertices());
-    mRootJoint->transformMatricesBinding(B_MJ, glm::mat4(1.));
+    mRootJoint->transformMatricesBinding(B_MJ, glm::mat4(1.), true);
 
     auto &vertices = mSkinMesh.GetVertices();
     for(int i = 0; i < vertices.size(); ++i) {
