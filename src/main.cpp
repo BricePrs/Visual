@@ -83,7 +83,7 @@ int main() {
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
     world.AddObject(&animatedMesh);
-    world.AddObject(&skinMesh);
+    // world.AddObject(&skinMesh);
 
     world.AddObject(&animatedJointRoot);
 
@@ -98,7 +98,7 @@ int main() {
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
-        animatedMesh.Update(elapsed*0.3);
+        animatedMesh.Update(elapsed);
 
         animatedJointRoot.BuildMesh();
         animatedJointRoot.Update(elapsed);
