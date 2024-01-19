@@ -360,10 +360,11 @@ void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, 
 void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform, bool IsRoot) {
     glm::mat4 transform = glm::mat4(1.);
 
-    transform[3][0] = (float) (-_offX);
-    transform[3][1] = (float) (-_offY);
-    transform[3][2] = (float) (-_offZ);
-
+    if (!IsRoot) {
+        transform[3][0] = (float) (-_offX);
+        transform[3][1] = (float) (-_offY);
+        transform[3][2] = (float) (-_offZ);
+    }
     transform = transform * parentTransform;
 
     matrices[this] = transform;
