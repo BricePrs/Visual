@@ -171,4 +171,4 @@ void AnimatedMesh::Draw(const PerspectiveCamera &camera, Shader &shader) {
     glLineWidth(1.f);
     mSkinMeshTransformed.Draw(camera, shader);
 }
-}
+

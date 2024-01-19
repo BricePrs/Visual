@@ -373,14 +373,14 @@ void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &mat
     }
 }
 
-void Joint::Draw(const PerspectiveCamera &camera) {
-    _ArrowX.Draw(camera);
-    _ArrowY.Draw(camera);
-    _ArrowZ.Draw(camera);
+void Joint::Draw(const PerspectiveCamera &camera, Shader &shader) {
+    _ArrowX.Draw(camera, shader);
+    _ArrowY.Draw(camera, shader);
+    _ArrowZ.Draw(camera, shader);
     if (!_IsRoot) {
         //_Box.Draw(camera);
     }
     for (auto & child: _children) {
-        child->Draw(camera);
+        child->Draw(camera, shader);
     }
 }

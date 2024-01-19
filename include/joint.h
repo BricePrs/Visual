@@ -98,7 +98,7 @@ public :
 	void transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform);
 	void transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform, bool IsRoot = false);
 
-    void Draw(const PerspectiveCamera &camera) override;
+    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
 };
 
 

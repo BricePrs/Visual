@@ -15,6 +15,8 @@
 #include "SoftBody.h"
 #include "Octree.h"
 #include "SignedDistanceField.h"
+#include "AnimatedJoint.h"
+#include "AnimatedMesh.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
@@ -158,6 +160,14 @@ int main() {
     Mesh<SimpleNormalVertex>::MESH_SHADER   = std::make_optional(world.GetShader(defaultNormalShader));
     Mesh<SimpleUvVertex>::MESH_SHADER       = std::make_optional(world.GetShader(defaultTextureShader));
 
+    AnimatedJoint::ARROW_SIZE = 0.15f;
+
+    std::shared_ptr<AnimatedMesh> animatedMesh = std::make_shared<AnimatedMesh>("bvh/walk1.bvh", "bvh/skin.off", "bvh/weights.txt");
+    Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
+    skinMesh.SetScale(glm::vec3(0.01f));
+    skinMesh.SetDrawMode(GL_LINE);
+
+
     std::shared_ptr<WireframeBox> boundaryBox = std::make_shared<WireframeBox>(
                     glm::vec3(0., 10., 0.),
                     glm::vec3(45, 10., 45.),
@@ -165,7 +175,7 @@ int main() {
                 );
 
     PhysicsParam params {-0.1, 0.00};
-    std::shared_ptr<SignedDistanceField> sdf = std::make_shared<SignedDistanceField>(20, 8.);
+    std::shared_ptr<SignedDistanceField> sdf = std::make_shared<SignedDistanceField>(5, 8.);
 
     //sdf->AddSphere(glm::vec3(0.), 2.);
     //sdf->AddSphere(glm::vec3(1.5), 1.);
@@ -194,6 +204,7 @@ int main() {
     world.AddObject(grid, defaultColorShader);
     //world.AddObject(sdf, defaultColorShader);
     world.AddObject(boundaryBox, defaultShader);
+    world.AddObject(animatedMesh, defaultShader);
     //world.AddObject(sdf, defaultColorShader);
     //world.AddObject(armadillo, defaultShader);
 
@@ -237,6 +248,10 @@ int main() {
         DrawSBWindow(sbp, sbId, world);
 
         world.Draw(inputManager.GetCamera());
+
+        double elapsed = std::chrono::duration<double>(time-StartTime).count();
+        animatedMesh->Update(elapsed);
+
 
 
         ImGui::Render();
