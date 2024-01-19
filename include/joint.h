@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 #include <glm/glm.hpp>
 #include "Mesh.h"
 
@@ -23,7 +24,7 @@ public :
 
 enum RotateOrder {roXYZ=0, roYZX, roZXY, roXZY, roYXZ, roZYX};
 
-class Joint {
+class Joint : public Drawable {
 public :
 	std::string _name;					// name of joint
 	double _offX;						// initial offset in X
@@ -38,7 +39,14 @@ public :
 	double _curRz;						// current value of rotation about Z (deg)
 	int _rorder;						// order of euler angles to reconstruct rotation
 	std::vector<Joint*> _children;	// children of the current joint
+    glm::vec3 _color;
 
+    Arrow3D         _ArrowX;
+    Arrow3D         _ArrowY;
+    Arrow3D         _ArrowZ;
+    WireframeBox    _Box;
+
+    bool _IsRoot = false;
 
 public :
 	// Constructor :
@@ -55,7 +63,7 @@ public :
     void parseJoint(std::ifstream &inputfile);
 
     void buildSkeleton(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, glm::vec3 O, glm::vec3 X, glm::vec3 Y, glm::vec3 Z) const;
-    void buildSkeletonMatrices(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, const glm::mat4 &transform) const;
+    void buildSkeletonMatrices(std::vector<SimpleVertex> &vertices, std::vector<uint32_t> &indices, const glm::mat4 &transform);
 
 	// Create from data :
 	static Joint* create(std::string name, double offX, double offY, double offZ, Joint* parent) {
@@ -84,6 +92,13 @@ public :
 
 	// Analysis of degrees of freedom :
 	void nbDofs();
+
+	// For Skinning
+    void populateJointMap(std::unordered_map<std::string, Joint *> &jointMap);
+	void transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform);
+	void transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform, bool IsRoot = false);
+
+    void Draw(const PerspectiveCamera &camera) override;
 };
 
 

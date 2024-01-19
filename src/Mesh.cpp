@@ -282,7 +282,12 @@ void Mesh<TVertex>::Draw(const PerspectiveCamera &camera, Shader &shader) {
 
     meshShader.setMat4("perspective", camera.getProjMatrix());
     meshShader.setMat4("view", camera.getViewMatrix());
-    meshShader.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(mOrientation));
+
+    if (mModel.has_value()) {
+        meshShader.setMat4("model", mModel.value());
+    } else {
+        meshShader.setMat4("model", glm::scale(glm::translate(glm::mat4(1.), mPosition), mScale) * glm::mat4_cast(glm::inverse(mOrientation)));
+    }
 
     meshShader.setVec3("cameraPosition", camera.getPosition()); // Could be retrieved from view matrix
     meshShader.setVec3("backgroundColor", {.08, .05, 0.05}); // Could be retrieved from view matrix
@@ -538,36 +543,44 @@ void InteractiveObject::Draw(const PerspectiveCamera &camera, Shader& shader) { 
     glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
 }
 
-WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color) : mCenter(center), mSides(sides) {
-    std::vector<SimpleVertex> vertices = {
-            glm::vec3(-1, -1, -1),                                   // 0
-
-            glm::vec3(-1, -1, 1),    // 1
-            glm::vec3(-1, 1, -1),    // 2
-            glm::vec3(1, -1, -1),    // 3
-
-            glm::vec3(-1, 1, 1),     // 4
-            glm::vec3(1, -1, 1),     // 5
-            glm::vec3(1, 1, -1),     // 6
-
-            glm::vec3(1, 1, 1),                                   // 7
-    };
-    std::vector<uint32_t> indices = {
-            0, 1, 0, 2, 0, 3,
-            1, 4, 1, 5, 2, 4, 2, 6, 3, 5, 3, 6,
-            4, 7, 5, 7, 6, 7
-    };
-    mMesh = {vertices, indices, false};
-    mMesh.SetPrimitiveMode(GL_LINES);
-    mMesh.SetColor(color);
+WireframeBox::WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color, glm::vec3 minBound, glm::vec3 maxBound) :
+    Mesh<SimpleVertex>(BuildMeshVertices(minBound, maxBound), BuildMeshIndices(), false)
+{
+    SetPrimitiveMode(GL_LINES);
+    SetColor(color);
     UpdateBox(center, sides);
 }
 
 void WireframeBox::UpdateBox(glm::vec3 center, glm::vec3 sides) {
-    mMesh.SetPosition(center);
-    mMesh.SetScale(sides);
+    SetPosition(center);
+    SetScale(sides);
 }
 
+
+
+std::vector<SimpleVertex> WireframeBox::BuildMeshVertices(glm::vec3 minBound, glm::vec3 maxBound) {
+    return {
+            minBound,      // 0
+
+            glm::vec3(minBound.x, minBound.y, maxBound.z),       // maxBound.z
+            glm::vec3(minBound.x, maxBound.y, minBound.z),       // 2
+            glm::vec3(maxBound.x, minBound.y, minBound.z),       // 3
+
+            glm::vec3(minBound.x, maxBound.y, maxBound.z),        // 4
+            glm::vec3(maxBound.x, minBound.y, maxBound.z),        // 5
+            glm::vec3(maxBound.x, maxBound.y, minBound.z),        // 6
+
+            maxBound,         // 7
+    };
+}
+
+std::vector<uint32_t> WireframeBox::BuildMeshIndices() {
+    return {
+            0, 1, 0, 2, 0, 3,
+            1, 4, 1, 5, 2, 4, 2, 6, 3, 5, 3, 6,
+            4, 7, 5, 7, 6, 7
+    };
+}
 
 void WireframeBox::Draw(const PerspectiveCamera &camera, Shader& shader) {
     mMesh.Draw(camera, shader);

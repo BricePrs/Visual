@@ -65,12 +65,15 @@ int main() {
 
     auto grid = GraphGrid(100, 1);
 
-    //AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
-    AnimatedMesh animatedMesh = { "testExportLN.bvh", "bvh/skin.off", "bvh/weights.txt" };
 
     AnimatedJoint::ARROW_SIZE = 0.15f;
 
-    AnimatedJoint animatedJointRoot = AnimatedJoint                                 ("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
+    AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
+    Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
+    skinMesh.SetScale(glm::vec3(0.01f));
+    skinMesh.SetDrawMode(GL_LINE);
+
+    AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
     std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
     std::shared_ptr<AnimatedJoint> animatedJoint2 = animatedJointRoot.AddChildren   ("AnimatedData/UARMR.txt", glm::vec3(0., 0.2, 0.6), "UArmR");
     std::shared_ptr<AnimatedJoint> animatedJoint3 = animatedJoint1->AddChildren     ("AnimatedData/FARML.txt", glm::vec3(0., 0., .3), "FArmL");
@@ -81,36 +84,26 @@ int main() {
 
     Scene world;
     world.AddObject(&grid);
-    //world.AddObject(&Pendulum2);
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
     world.AddObject(&animatedMesh);
+    // world.AddObject(&skinMesh);
+
     world.AddObject(&animatedJointRoot);
 
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-
-
-    InputManager inputManager(window, world, new PerspectiveCamera(ASPECT));
+    InputManager inputManager(window, world);
     while (!glfwWindowShouldClose(window)) {
         auto startFrameTime = std::chrono::high_resolution_clock::now();
         glClearColor(.08, .05, 0.05, 1.);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glStencilMask(0x00);
 
-
-
-        int32_t stepCount = static_cast<int32_t>(1./60./dt*.01);
-        for (int i = 0; i < stepCount; ++i) {
-            Pendulum2.Step2();
-        }
-
         static auto StartTime = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
         animatedMesh.Update(elapsed);
+
         animatedJointRoot.BuildMesh();
         animatedJointRoot.Update(elapsed);
 

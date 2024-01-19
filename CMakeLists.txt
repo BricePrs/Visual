@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.22)
+project(Visual)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
@@ -13,6 +14,8 @@ set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-12.3)
 
 
 project(Visual)
+# Add debug flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
 
 include_directories(Visual vendors)
 include_directories(Visual include)

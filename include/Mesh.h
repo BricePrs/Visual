@@ -136,6 +136,25 @@ public:
 
     void RecomputeVerticesAttributes();
 
+    size_t GetNbVertices() const{
+        return  mVertices.size();
+    };
+    std::vector<TVertex> GetVerticesCopy() const{
+        return mVertices;
+    }
+    std::vector<TVertex>& GetVertices() {
+        return mVertices;
+    }
+    std::vector<glm::uint32_t> GetIndicesCopy() const{
+        return mIndices;
+    }
+    std::vector<glm::uint32_t>& GetIndices() {
+        return mIndices;
+    }
+
+    void setModel(const std::optional<glm::mat4> &model) {
+        Mesh::mModel = model;
+    }
 
     inline static std::optional<Shader> MESH_SHADER = {};
 
@@ -151,6 +170,7 @@ private:
     bool mIsHovered;
     bool mIsSelected;
     glm::quat mOrientation;
+    std::optional<glm::mat4> mModel;
     glm::vec3 mScale = glm::vec3(1.);
 
     std::optional<Texture> mTexture;
@@ -230,10 +250,10 @@ private:
     Mesh<SimpleVertex> mScaleGrid;
 };
 
-class WireframeBox : public Drawable {
+class WireframeBox : public Mesh<SimpleVertex> {
 public:
 
-    WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color);
+    WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color, glm::vec3 minBound = glm::vec3(-1.), glm::vec3 maxBound = glm::vec3(1.));
 
     void Draw(const PerspectiveCamera &camera, Shader &shader) override;
     void UpdateBox(glm::vec3 center, glm::vec3 sides);
@@ -247,6 +267,9 @@ public:
     }
 
 private:
+
+    static std::vector<SimpleVertex> BuildMeshVertices(glm::vec3 minBound, glm::vec3 maxBound);
+    static std::vector<uint32_t> BuildMeshIndices();
 
     Mesh<SimpleVertex>  mMesh;
     glm::vec3           mCenter;

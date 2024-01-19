@@ -6,6 +6,9 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/color_space.hpp>
 
 using namespace std;
 
@@ -158,6 +161,7 @@ void Joint::animate(int iframe)
     for (unsigned int idof = 0 ; idof < _dofs.size() ; idof++) {
         if (_children.empty()) continue;
         if (_dofs[idof]._values.size() <= iframe) {
+            //std::cout << "Max value is " << _dofs[idof]._values.size() << " but asked for " << iframe << std::endl;
             continue;
         }
         if(!_dofs[idof].name.compare("Xposition")) _curTx = _dofs[idof]._values[iframe];
@@ -183,7 +187,9 @@ void Joint::animateLerp(int iframe, double framePercent)
     glm::quat pr = glm::quat(glm::vec3(glm::radians(_curRx), glm::radians(_curRy), glm::radians(_curRz)));
     animate(iframe+1);
     glm::quat nr = glm::quat(glm::vec3(glm::radians(_curRx), glm::radians(_curRy), glm::radians(_curRz)));
-    _curTx = (1.-framePercent) * p_curTx + framePercent * _curTx ; _curTy = (1.-framePercent) * p_curTy + framePercent * _curTy ; _curTz = (1.-framePercent) * p_curTz + framePercent * _curTz ;
+    _curTx = (1.-framePercent) * p_curTx + framePercent * _curTx ;
+    _curTy = (1.-framePercent) * p_curTy + framePercent * _curTy ;
+    _curTz = (1.-framePercent) * p_curTz + framePercent * _curTz ;
     glm::vec3 res = glm::eulerAngles(glm::slerp(pr, nr, (float)framePercent));
     _curRx = glm::degrees(res.x);
     _curRy = glm::degrees(res.y);
@@ -252,10 +258,21 @@ void Joint::buildSkeleton(std::vector<SimpleVertex> &vertices, std::vector<uint3
 }
 
 Joint::Joint()
-    : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0)
-{}
+    : _curRx(0), _curRy(0), _curRz(0), _curTx(0), _curTy(0), _curTz(0), _offX(0), _offY(0), _offZ(0),
+      _ArrowX(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(1., 0., 0.)*0.15f, glm::vec3(1., 0., 0.))),
+      _ArrowY(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 1., 0.)*0.15f, glm::vec3(0., 1., 0.))),
+      _ArrowZ(Arrow3D(glm::vec3(0., 0., 0.), glm::vec3(0., 0., 1.)*0.15f, glm::vec3(0., 0., 1.))),
+      _Box(WireframeBox(glm::vec3(0.), glm::vec3(0.01), glm::vec3(1., 0.4, 0.1), glm::vec3(-1., 0., -1.), glm::vec3(1., 2., 1.)))
+{
+    // Generate a saturated random color
+    _color = glm::normalize(glm::vec3(
+                    glm::linearRand(0.0f, 1.0f),
+                    glm::linearRand(0.0f, 1.0f),
+                    glm::linearRand(0.0f, 1.0f)));
 
-void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform) const {
+}
+
+void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_t> &indices, const glm::mat4 &transform){
     glm::mat4 childTransform = glm::mat4(1.);
     for (auto &curve: _dofs) {
         if(!curve.name.compare("Zrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
@@ -263,9 +280,9 @@ void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_
         if(!curve.name.compare("Xrotation")) childTransform = childTransform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
     }
 
-    childTransform[3][0] = (float)(_curTx + _offX);
-    childTransform[3][1] = (float)(_curTy + _offY);
-    childTransform[3][2] = (float)(_curTz + _offZ);
+    childTransform[3][0] = (float)(_curTx+_offX);
+    childTransform[3][1] = (float)(_curTy+_offY);
+    childTransform[3][2] = (float)(_curTz+_offZ);
 
     childTransform = transform * childTransform;
 
@@ -277,5 +294,93 @@ void Joint::buildSkeletonMatrices(vector<SimpleVertex> &vertices, vector<uint32_
     }
     if (_children.empty()) {
         vertices.emplace_back(glm::vec3(childTransform*glm::vec4(0., 0., 0., 1.)));
+    }
+}
+
+void Joint::populateJointMap(std::unordered_map<std::string, Joint *> &jointMap) {
+    jointMap.insert(std::make_pair(this->_name, this));
+    for (auto &child: _children) {
+        child->populateJointMap(jointMap);
+    }
+}
+
+void Joint::transformMatrices(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform){
+    glm::mat4 transform = glm::mat4(1.);
+    for (auto &curve: _dofs) {
+        if(!curve.name.compare("Zrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRz), glm::vec3(0., 0., 1.));
+        if(!curve.name.compare("Yrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRy), glm::vec3(0., 1., 0.));
+        if(!curve.name.compare("Xrotation")) transform = transform * glm::rotate(glm::mat4(1.), (float)glm::radians(_curRx), glm::vec3(1., 0., 0.));
+    }
+
+    transform[3][0] = (float)(_curTx+_offX);
+    transform[3][1] = (float)(_curTy+_offY);
+    transform[3][2] = (float)(_curTz+_offZ);
+
+    transform = parentTransform * transform;
+
+    auto arrowTransform = transform;
+    arrowTransform[3][0]*=0.01f;
+    arrowTransform[3][1]*=0.01f;
+    arrowTransform[3][2]*=0.01f;
+    _ArrowX.setModel(arrowTransform);
+    _ArrowY.setModel(arrowTransform);
+    _ArrowZ.setModel(arrowTransform);
+    if (!_IsRoot) {
+        auto boxTransform = parentTransform;
+        auto offset = glm::vec3(_offX*0.01, _offY*0.01, _offZ*0.01);
+        float l = glm::length(glm::vec3(offset));
+        glm::vec3 mainAxis;
+        if (offset.x > offset.y && offset.x > offset.z) {
+            mainAxis = glm::vec3(1., 0., .0);
+        } else if (offset.y > offset.x && offset.y > offset.z) {
+            mainAxis = glm::vec3(0., 1., .0);
+        } else {
+            mainAxis = glm::vec3(0., 0., 1.);
+        }
+
+        _Box = WireframeBox(
+                glm::vec3(0.),
+                glm::vec3(0.01),
+                glm::vec3(1., 0.4, 0.1),
+                glm::vec3(-0.1f*l)*(glm::vec3(1.)-mainAxis),
+                glm::vec3(0.1f*l)*(glm::vec3(1.)-mainAxis)+glm::vec3(_offX*0.01, _offY*0.01, _offZ*0.01)
+            );
+        boxTransform[3][0]*=0.01f;
+        boxTransform[3][1]*=0.01f;
+        boxTransform[3][2]*=0.01f;
+        _Box.setModel(boxTransform);
+    }
+    matrices[this] = transform;
+
+    for (auto &child: _children) {
+        child->transformMatrices(matrices, transform);
+    }
+}
+
+void Joint::transformMatricesBinding(std::unordered_map<Joint *, glm::mat4> &matrices, const glm::mat4 &parentTransform, bool IsRoot) {
+    glm::mat4 transform = glm::mat4(1.);
+
+    transform[3][0] = (float) (-_offX);
+    transform[3][1] = (float) (-_offY);
+    transform[3][2] = (float) (-_offZ);
+
+    transform = transform * parentTransform;
+
+    matrices[this] = transform;
+
+    for (auto &child: _children) {
+        child->transformMatricesBinding(matrices, transform);
+    }
+}
+
+void Joint::Draw(const PerspectiveCamera &camera) {
+    _ArrowX.Draw(camera);
+    _ArrowY.Draw(camera);
+    _ArrowZ.Draw(camera);
+    if (!_IsRoot) {
+        //_Box.Draw(camera);
+    }
+    for (auto & child: _children) {
+        child->Draw(camera);
     }
 }

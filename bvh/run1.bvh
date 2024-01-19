@@ -1,29 +1,29 @@
 HIERARCHY
-ROOT hips_dup
+ROOT hips
 {
 	OFFSET 740.547119 85.626953 37.583111
 	CHANNELS 6 Xposition Yposition Zposition Zrotation Yrotation Xrotation
-	JOINT l_hip_dup
+	JOINT l_hip
 	{
 		OFFSET 0.100000 -0.000000 0.000000
 		CHANNELS 3 Zrotation Yrotation Xrotation
-		JOINT l_thigh_dup
+		JOINT l_thigh
 		{
 			OFFSET 12.325401 0.000000 -0.000000
 			CHANNELS 3 Zrotation Yrotation Xrotation
-			JOINT l_knee_dup
+			JOINT l_knee
 			{
 				OFFSET 2.775703 -52.963533 0.000001
 				CHANNELS 3 Zrotation Yrotation Xrotation
-				JOINT l_foot_dup
+				JOINT l_foot
 				{
 					OFFSET 2.443169 -46.618436 0.000001
 					CHANNELS 3 Zrotation Yrotation Xrotation
-					JOINT l_toes_dup
+					JOINT l_toes
 					{
 						OFFSET 0.311175 -5.937582 12.750666
 						CHANNELS 3 Zrotation Yrotation Xrotation
-						End l_toes_End_dup
+						End l_toes_End
 						{
 							OFFSET 0.044636 -0.851711 9.748467
 						}
@@ -32,27 +32,27 @@ ROOT hips_dup
 			}
 		}
 	}
-	JOINT r_hip_dup
+	JOINT r_hip
 	{
 		OFFSET 0.100000 -0.000000 0.000000
 		CHANNELS 3 Zrotation Yrotation Xrotation
-		JOINT r_thigh_dup
+		JOINT r_thigh
 		{
 			OFFSET -12.325401 0.000000 -0.000000
 			CHANNELS 3 Zrotation Yrotation Xrotation
-			JOINT r_knee_dup
+			JOINT r_knee
 			{
 				OFFSET -2.728099 -52.055206 -0.000001
 				CHANNELS 3 Zrotation Yrotation Xrotation
-				JOINT r_foot_dup
+				JOINT r_foot
 				{
 					OFFSET -2.488649 -47.486215 -0.000001
 					CHANNELS 3 Zrotation Yrotation Xrotation
-					JOINT r_toes_dup
+					JOINT r_toes
 					{
 						OFFSET -0.340057 -6.488687 13.934137
 						CHANNELS 3 Zrotation Yrotation Xrotation
-						End r_toes_End_dup
+						End r_toes_End
 						{
 							OFFSET -0.046094 -0.879518 10.066733
 						}
@@ -61,49 +61,49 @@ ROOT hips_dup
 			}
 		}
 	}
-	JOINT spine1_dup
+	JOINT spine1
 	{
 		OFFSET 0.100000 0.000000 -0.000000
 		CHANNELS 3 Zrotation Yrotation Xrotation
-		JOINT spine2_dup
+		JOINT spine2
 		{
 			OFFSET -0.000000 14.215645 -0.000000
 			CHANNELS 3 Zrotation Yrotation Xrotation
-			JOINT spine3_dup
+			JOINT spine3
 			{
 				OFFSET -0.435970 23.745087 -0.905567
 				CHANNELS 3 Zrotation Yrotation Xrotation
-				JOINT neck_dup
+				JOINT neck1
 				{
 					OFFSET -0.218957 18.933090 -0.472811
 					CHANNELS 3 Zrotation Yrotation Xrotation
-					JOINT head_dup
+					JOINT head
 					{
 						OFFSET 0.331457 12.008331 0.226232
 						CHANNELS 3 Zrotation Yrotation Xrotation
-						End head_End_dup
+						End head_End
 						{
 							OFFSET 0.538358 11.858373 1.269734
 						}
 					}
 				}
-				JOINT l_clavicle_dup
+				JOINT l_clavicle
 				{
 					OFFSET -0.218957 18.933090 -0.472811
 					CHANNELS 3 Zrotation Yrotation Xrotation
-					JOINT l_shoulder_dup
+					JOINT l_shoulder
 					{
 						OFFSET 15.116303 0.000000 0.000000
 						CHANNELS 3 Zrotation Yrotation Xrotation
-						JOINT l_elbow_dup
+						JOINT l_elbow
 						{
 							OFFSET 31.712253 -0.000737 2.830977
 							CHANNELS 3 Zrotation Yrotation Xrotation
-							JOINT l_hand_dup
+							JOINT l_hand
 							{
 								OFFSET 34.877886 -0.000002 6.159167
 								CHANNELS 3 Zrotation Yrotation Xrotation
-								End l_hand_End_dup
+								End l_hand_End
 								{
 									OFFSET 12.171075 0.250001 2.146094
 								}
@@ -111,23 +111,23 @@ ROOT hips_dup
 						}
 					}
 				}
-				JOINT r_clavicle_dup
+				JOINT r_clavicle
 				{
 					OFFSET -0.218957 18.933090 -0.472811
 					CHANNELS 3 Zrotation Yrotation Xrotation
-					JOINT r_shoulder_dup
+					JOINT r_shoulder
 					{
 						OFFSET -14.846962 0.000000 0.000000
 						CHANNELS 3 Zrotation Yrotation Xrotation
-						JOINT r_elbow_dup
+						JOINT r_elbow
 						{
 							OFFSET -32.950214 0.000983 2.813988
 							CHANNELS 3 Zrotation Yrotation Xrotation
-							JOINT r_hand_dup
+							JOINT r_hand
 							{
 								OFFSET -32.405870 -0.000004 5.705434
 								CHANNELS 3 Zrotation Yrotation Xrotation
-								End r_hand_End_dup
+								End r_hand_End
 								{
 									OFFSET -12.660152 0.250000 2.232319
 								}
