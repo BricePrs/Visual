@@ -40,6 +40,8 @@ private:
     double mFrameTime;
 
     std::vector<glm::quat> mOrientations;
+    std::optional<std::vector<glm::vec3>> mPos;
+    glm::vec3 mDefaultAcc;
 
     Arrow3D mArrowX;
     Arrow3D mArrowY;

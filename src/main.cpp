@@ -79,54 +79,54 @@ int main() {
     // ROOT
     float x, y, z;
     x = 0.; y = 0.; z = 0.;
-    AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/hassan_240119_11h28/PELV.txt", glm::vec3(x, y, z), "Pelv");
+    AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/hassan_240119_11h31/PELV.txt", glm::vec3(x, y, z), "Pelv");
     // Cou Tete
-    x = 0.; y = 0.; z = 1.;
-    std::shared_ptr<AnimatedJoint> animatedJointSTERN = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/STERN.txt", glm::vec3(x, y, z), "Stern");
-    x = 0; y = 0.; z = 0.5;
-    std::shared_ptr<AnimatedJoint> animatedJointHEAD = animatedJointSTERN->AddChildren   ("AnimatedData/hassan_240119_11h28/HEAD.txt", glm::vec3(x, y, z), "Head");
-    x = 0.; y = 0.; z = 0.2;
+    x = 0.; y = 0.; z = .6;
+    std::shared_ptr<AnimatedJoint> animatedJointSTERN = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h31/STERN.txt", glm::vec3(x, y, z), "Stern");
+    x = 0; y = 0.; z = 0.3;
+    std::shared_ptr<AnimatedJoint> animatedJointHEAD = animatedJointSTERN->AddChildren   ("AnimatedData/hassan_240119_11h31/HEAD.txt", glm::vec3(x, y, z), "Head");
+    x = 0.; y = 0.1; z = 0.;
     animatedJointHEAD->SetEnd(glm::vec3(x, y, z));
     // Bras gauche
-    x = 0.; y = -0.5; z = 1.;
-    std::shared_ptr<AnimatedJoint> animatedJointSHOUL = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/SHOUL.txt",   glm::vec3(x, y, z), "ShouL");
-    x = 0.; y = -0.2; z = 0.;
-    std::shared_ptr<AnimatedJoint> animatedJointUARML = animatedJointSHOUL->AddChildren   ("AnimatedData/hassan_240119_11h28/UARML.txt", glm::vec3(x, y, z), "UArmL");
-    x = 0.; y = -0.2; z = 0.;
-    std::shared_ptr<AnimatedJoint> animatedJointFARML = animatedJointUARML->AddChildren   ("AnimatedData/hassan_240119_11h28/FARML.txt", glm::vec3(x, y, z), "FArmL");
-    x = 0.; y = -0.2; z = 0.;
-    std::shared_ptr<AnimatedJoint> animatedJointHANDL = animatedJointFARML->AddChildren   ("AnimatedData/hassan_240119_11h28/HANDL.txt", glm::vec3(x, y, z), "HandL");
-    x = 0.; y = -0.1; z = 0.;
+    x = 0.; y = 0.17; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointSHOUL = animatedJointSTERN->AddChildren   ("AnimatedData/hassan_240119_11h31/SHOUL.txt",   glm::vec3(x, y, z), "ShouL");
+    x = 0.; y = 0.; z = 0.2;
+    std::shared_ptr<AnimatedJoint> animatedJointUARML = animatedJointSHOUL->AddChildren   ("AnimatedData/hassan_240119_11h31/UARML.txt", glm::vec3(x, y, z), "UArmL");
+    x = 0.; y = 0.; z = 0.2;
+    std::shared_ptr<AnimatedJoint> animatedJointFARML = animatedJointUARML->AddChildren   ("AnimatedData/hassan_240119_11h31/FARML.txt", glm::vec3(x, y, z), "FArmL");
+    x = 0.; y = 0.; z = 0.2;
+    std::shared_ptr<AnimatedJoint> animatedJointHANDL = animatedJointFARML->AddChildren   ("AnimatedData/hassan_240119_11h31/HANDL.txt", glm::vec3(x, y, z), "HandL");
+    x = 0.; y = 0.; z = 0.1;
     animatedJointHANDL->SetEnd(glm::vec3(x, y, z));
     // Bras Droit
-    x = 0.; y = 0.5; z = 1.;
-    std::shared_ptr<AnimatedJoint> animatedJointSHOUR = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/SHOUR.txt",  glm::vec3(x, y, z), "ShouR");
-    x = 0.; y = 0.2; z = 0.;
-    std::shared_ptr<AnimatedJoint> animatedJointUARMR = animatedJointSHOUR->AddChildren   ("AnimatedData/hassan_240119_11h28/UARMR.txt", glm::vec3(x, y, z), "UArmR");
-    x = 0.; y = 0.2; z = 0.;
-    std::shared_ptr<AnimatedJoint> animatedJointFARMR = animatedJointUARMR->AddChildren   ("AnimatedData/hassan_240119_11h28/FARMR.txt", glm::vec3(x, y, z), "FArmR");
-    x = 0.; y = 0.2; z = 0.;
-    std::shared_ptr<AnimatedJoint> animatedJointHANDR = animatedJointFARMR->AddChildren   ("AnimatedData/hassan_240119_11h28/HANDR.txt", glm::vec3(x, y, z), "HandR");
-    x = 0.; y = 0.1; z = 0.;
+    x = 0.; y = -0.17; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointSHOUR = animatedJointSTERN->AddChildren   ("AnimatedData/hassan_240119_11h31/SHOUR.txt",  glm::vec3(x, y, z), "ShouR");
+    x = 0.; y = 0.; z = 0.2;
+    std::shared_ptr<AnimatedJoint> animatedJointUARMR = animatedJointSHOUR->AddChildren   ("AnimatedData/hassan_240119_11h31/UARMR.txt", glm::vec3(x, y, z), "UArmR");
+    x = 0.; y = 0.; z = 0.2;
+    std::shared_ptr<AnimatedJoint> animatedJointFARMR = animatedJointUARMR->AddChildren   ("AnimatedData/hassan_240119_11h31/FARMR.txt", glm::vec3(x, y, z), "FArmR");
+    x = 0.; y = 0.; z = 0.2;
+    std::shared_ptr<AnimatedJoint> animatedJointHANDR = animatedJointFARMR->AddChildren   ("AnimatedData/hassan_240119_11h31/HANDR.txt", glm::vec3(x, y, z), "HandR");
+    x = 0.; y = 0.; z = 0.1;
     animatedJointHANDR->SetEnd(glm::vec3(x, y, z));
-    // // Jambe gauche
-    // x = 0.; y = -0.5; z = 0.;
-    // std::shared_ptr<AnimatedJoint> animatedJointULEGL = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/ULEGL.txt",  glm::vec3(x, y, z), "ULegL");
-    // x = 0.; y = 0.; z = -0.5;
-    // std::shared_ptr<AnimatedJoint> animatedJointLLEGL = animatedJointULEGL->AddChildren   ("AnimatedData/hassan_240119_11h28/LLEGL.txt", glm::vec3(x, y, z), "LLegL");
-    // x = 0.; y = 0.; z = -0.5;
-    // std::shared_ptr<AnimatedJoint> animatedJointFOOTL = animatedJointLLEGL->AddChildren   ("AnimatedData/hassan_240119_11h28/FOOTL.txt", glm::vec3(x, y, z), "FootL");
-    // x = 0.2; y = 0.; z = 0.;
-    // animatedJointFOOTL->SetEnd(glm::vec3(x, y, z));
-    // // Jambe droite
-    // x = 0.; y = 0.5; z = 0.;
-    // std::shared_ptr<AnimatedJoint> animatedJointULEGR = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/ULEGR.txt",  glm::vec3(x, y, z), "ULegR");
-    // x = 0.; y = 0.; z = -0.5;
-    // std::shared_ptr<AnimatedJoint> animatedJointLLEGR = animatedJointULEGR->AddChildren   ("AnimatedData/hassan_240119_11h28/LLEGR.txt", glm::vec3(x, y, z), "LLegR");
-    // x = 0.; y = 0.; z = -0.5;
-    // std::shared_ptr<AnimatedJoint> animatedJointFOOTR = animatedJointLLEGR->AddChildren   ("AnimatedData/hassan_240119_11h28/FOOTR.txt", glm::vec3(x, y, z), "FootR");
-    // x = 0.2; y = 0.; z = 0.;
-    // animatedJointFOOTR->SetEnd(glm::vec3(x, y, z));
+    // Jambe gauche
+    x = 0.; y = -0.15; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointULEGL = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h31/ULEGL.txt",  glm::vec3(x, y, z), "ULegL");
+    x = 0.; y = 0.; z = 0.5;
+    std::shared_ptr<AnimatedJoint> animatedJointLLEGL = animatedJointULEGL->AddChildren   ("AnimatedData/hassan_240119_11h31/LLEGL.txt", glm::vec3(x, y, z), "LLegL");
+    x = 0.; y = 0.; z = 0.5;
+    std::shared_ptr<AnimatedJoint> animatedJointFOOTL = animatedJointLLEGL->AddChildren   ("AnimatedData/hassan_240119_11h31/FOOTL.txt", glm::vec3(x, y, z), "FootL");
+    x = -0.2; y = 0.; z = 0.1;
+    animatedJointFOOTL->SetEnd(glm::vec3(x, y, z));
+    // Jambe droite
+    x = 0.; y = 0.15; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointULEGR = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h31/ULEGR.txt",  glm::vec3(x, y, z), "ULegR");
+    x = 0.; y = 0.; z = 0.5;
+    std::shared_ptr<AnimatedJoint> animatedJointLLEGR = animatedJointULEGR->AddChildren   ("AnimatedData/hassan_240119_11h31/LLEGR.txt", glm::vec3(x, y, z), "LLegR");
+    x = 0.; y = 0.; z = 0.5;
+    std::shared_ptr<AnimatedJoint> animatedJointFOOTR = animatedJointLLEGR->AddChildren   ("AnimatedData/hassan_240119_11h31/FOOTR.txt", glm::vec3(x, y, z), "FootR");
+    x = -0.2; y = 0.; z = 0.1;
+    animatedJointFOOTR->SetEnd(glm::vec3(x, y, z));
 
 
     Scene world;
@@ -152,7 +152,7 @@ int main() {
         // animatedMesh.Update(elapsed);
 
         animatedJointRoot.BuildMesh();
-        animatedJointRoot.Update(elapsed*0);
+        animatedJointRoot.Update(elapsed);
 
         world.Draw(inputManager.GetCamera());
 
