@@ -1,0 +1,13 @@
+// General information: 
+//  MT Manager version: 2021.0.0 
+//  XDA version: 2021.0.0 build 5908 rev 109668 built on 2021-04-19
+// Device information: 
+//  DeviceId: 00B43E23
+//  ProductCode: MTW2-3A7G6
+//  Firmware Version: 4.3.5
+//  Hardware Version: 1.1.0
+// Device settings: 
+//  Filter Profile: human(46.1)
+//  Option Flags: Orientation Smoother Disabled, Position/Velocity Smoother Disabled, Continuous Zero Rotation Update Disabled, AHS Disabled, ICC Disabled
+// Coordinate system: ENU
+PacketCounter	RSSI	Acc_X	Acc_Y	Acc_Z	FreeAcc_E	FreeAcc_N	FreeAcc_U	Quat_q0	Quat_q1	Quat_q2	Quat_q3

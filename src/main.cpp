@@ -66,20 +66,74 @@ int main() {
 
     AnimatedMesh animatedMesh = { "bvh/walk1.bvh", "bvh/skin.off", "bvh/weights.txt" };
 
-    AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
-    std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
-    std::shared_ptr<AnimatedJoint> animatedJoint2 = animatedJointRoot.AddChildren   ("AnimatedData/UARMR.txt", glm::vec3(0., 0.2, 0.6), "UArmR");
-    std::shared_ptr<AnimatedJoint> animatedJoint3 = animatedJoint1->AddChildren     ("AnimatedData/FARML.txt", glm::vec3(0., 0., .3), "FArmL");
-    std::shared_ptr<AnimatedJoint> animatedJoint4 = animatedJoint2->AddChildren     ("AnimatedData/FARMR.txt", glm::vec3(0., 0., .3), "FArmR");
-    animatedJoint3->SetEnd(glm::vec3(0., 0., .3));
-    animatedJoint4->SetEnd(glm::vec3(0., 0., .3));
+    // X = -z, Y = x, Z = y
+    // AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
+    // std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
+    // std::shared_ptr<AnimatedJoint> animatedJoint2 = animatedJointRoot.AddChildren   ("AnimatedData/UARMR.txt", glm::vec3(0., 0.2, 0.6), "UArmR");
+    // std::shared_ptr<AnimatedJoint> animatedJoint3 = animatedJoint1->AddChildren     ("AnimatedData/FARML.txt", glm::vec3(0., 0., .3), "FArmL");
+    // std::shared_ptr<AnimatedJoint> animatedJoint4 = animatedJoint2->AddChildren     ("AnimatedData/FARMR.txt", glm::vec3(0., 0., .3), "FArmR");
+    // animatedJoint3->SetEnd(glm::vec3(0., 0., .3));
+    // animatedJoint4->SetEnd(glm::vec3(0., 0., .3));
+
+    // Steph skeleton // X = -z, Y = x, Z = y
+    // ROOT
+    float x, y, z;
+    x = 0.; y = 0.; z = 0.;
+    AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/hassan_240119_11h28/PELV.txt", glm::vec3(x, y, z), "Pelv");
+    // Cou Tete
+    x = 0.; y = 0.; z = 1.;
+    std::shared_ptr<AnimatedJoint> animatedJointSTERN = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/STERN.txt", glm::vec3(x, y, z), "Stern");
+    x = 0; y = 0.; z = 0.5;
+    std::shared_ptr<AnimatedJoint> animatedJointHEAD = animatedJointSTERN->AddChildren   ("AnimatedData/hassan_240119_11h28/HEAD.txt", glm::vec3(x, y, z), "Head");
+    x = 0.; y = 0.; z = 0.2;
+    animatedJointHEAD->SetEnd(glm::vec3(x, y, z));
+    // Bras gauche
+    x = 0.; y = -0.5; z = 1.;
+    std::shared_ptr<AnimatedJoint> animatedJointSHOUL = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/SHOUL.txt",   glm::vec3(x, y, z), "ShouL");
+    x = 0.; y = -0.2; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointUARML = animatedJointSHOUL->AddChildren   ("AnimatedData/hassan_240119_11h28/UARML.txt", glm::vec3(x, y, z), "UArmL");
+    x = 0.; y = -0.2; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointFARML = animatedJointUARML->AddChildren   ("AnimatedData/hassan_240119_11h28/FARML.txt", glm::vec3(x, y, z), "FArmL");
+    x = 0.; y = -0.2; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointHANDL = animatedJointFARML->AddChildren   ("AnimatedData/hassan_240119_11h28/HANDL.txt", glm::vec3(x, y, z), "HandL");
+    x = 0.; y = -0.1; z = 0.;
+    animatedJointHANDL->SetEnd(glm::vec3(x, y, z));
+    // Bras Droit
+    x = 0.; y = 0.5; z = 1.;
+    std::shared_ptr<AnimatedJoint> animatedJointSHOUR = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/SHOUR.txt",  glm::vec3(x, y, z), "ShouR");
+    x = 0.; y = 0.2; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointUARMR = animatedJointSHOUR->AddChildren   ("AnimatedData/hassan_240119_11h28/UARMR.txt", glm::vec3(x, y, z), "UArmR");
+    x = 0.; y = 0.2; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointFARMR = animatedJointUARMR->AddChildren   ("AnimatedData/hassan_240119_11h28/FARMR.txt", glm::vec3(x, y, z), "FArmR");
+    x = 0.; y = 0.2; z = 0.;
+    std::shared_ptr<AnimatedJoint> animatedJointHANDR = animatedJointFARMR->AddChildren   ("AnimatedData/hassan_240119_11h28/HANDR.txt", glm::vec3(x, y, z), "HandR");
+    x = 0.; y = 0.1; z = 0.;
+    animatedJointHANDR->SetEnd(glm::vec3(x, y, z));
+    // // Jambe gauche
+    // x = 0.; y = -0.5; z = 0.;
+    // std::shared_ptr<AnimatedJoint> animatedJointULEGL = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/ULEGL.txt",  glm::vec3(x, y, z), "ULegL");
+    // x = 0.; y = 0.; z = -0.5;
+    // std::shared_ptr<AnimatedJoint> animatedJointLLEGL = animatedJointULEGL->AddChildren   ("AnimatedData/hassan_240119_11h28/LLEGL.txt", glm::vec3(x, y, z), "LLegL");
+    // x = 0.; y = 0.; z = -0.5;
+    // std::shared_ptr<AnimatedJoint> animatedJointFOOTL = animatedJointLLEGL->AddChildren   ("AnimatedData/hassan_240119_11h28/FOOTL.txt", glm::vec3(x, y, z), "FootL");
+    // x = 0.2; y = 0.; z = 0.;
+    // animatedJointFOOTL->SetEnd(glm::vec3(x, y, z));
+    // // Jambe droite
+    // x = 0.; y = 0.5; z = 0.;
+    // std::shared_ptr<AnimatedJoint> animatedJointULEGR = animatedJointRoot.AddChildren   ("AnimatedData/hassan_240119_11h28/ULEGR.txt",  glm::vec3(x, y, z), "ULegR");
+    // x = 0.; y = 0.; z = -0.5;
+    // std::shared_ptr<AnimatedJoint> animatedJointLLEGR = animatedJointULEGR->AddChildren   ("AnimatedData/hassan_240119_11h28/LLEGR.txt", glm::vec3(x, y, z), "LLegR");
+    // x = 0.; y = 0.; z = -0.5;
+    // std::shared_ptr<AnimatedJoint> animatedJointFOOTR = animatedJointLLEGR->AddChildren   ("AnimatedData/hassan_240119_11h28/FOOTR.txt", glm::vec3(x, y, z), "FootR");
+    // x = 0.2; y = 0.; z = 0.;
+    // animatedJointFOOTR->SetEnd(glm::vec3(x, y, z));
 
 
     Scene world;
     world.AddObject(&grid);
     world.AddObject(&mesh);
     world.AddObject(&mesh2);
-    world.AddObject(&animatedMesh);
+    // world.AddObject(&animatedMesh);
     // world.AddObject(&skinMesh);
 
     world.AddObject(&animatedJointRoot);
@@ -95,10 +149,10 @@ int main() {
         auto time = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(time-StartTime).count();
 
-        animatedMesh.Update(elapsed);
+        // animatedMesh.Update(elapsed);
 
         animatedJointRoot.BuildMesh();
-        animatedJointRoot.Update(elapsed);
+        animatedJointRoot.Update(elapsed*0);
 
         world.Draw(inputManager.GetCamera());
 
@@ -108,7 +162,7 @@ int main() {
         std::this_thread::sleep_until(startFrameTime+std::chrono::duration<double, std::ratio<1, 300>>(1));
     }
 
-    animatedJointRoot.ExportBVH("testExportLN.bvh");
+    animatedJointRoot.ExportBVH("testExportSTEPH.bvh");
 
     glfwTerminate();
 

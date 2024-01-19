@@ -35,7 +35,7 @@ void AnimatedJoint::Update(double dt) {
 }
 
 std::shared_ptr<AnimatedJoint> AnimatedJoint::AddChildren(const std::string &fileName, glm::vec3 relativePosition, const std::string &name) {
-    mChildren.emplace_back(std::make_shared<AnimatedJoint>(fileName, mPosition+ glm::inverse(mOrientations[0]) * relativePosition, name));
+    mChildren.emplace_back(std::make_shared<AnimatedJoint>(fileName, mPosition + glm::inverse(mOrientations[0]) * relativePosition, name));
     mChildren.back()->mRelativePosition = relativePosition;
     return mChildren.back();
 }
