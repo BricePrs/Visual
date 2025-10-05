@@ -7,21 +7,17 @@
 
 #include "glad/glad.h"
 #include <GlobalVar.h>
-#include <cuda_gl_interop.h>
 
 class Texture {
 public:
 
-    Texture() : mId(0), mWidth(0), mHeight(0), mCudaGraphicsResource(nullptr) {}
+    Texture() : mId(0), mWidth(0), mHeight(0) {}
     Texture(const char *data, uint32_t width, uint32_t height, uint8_t channels);
     Texture(const char *data, uint32_t width, uint32_t height, GLenum format, GLenum internalFormat);
     Texture(uint32_t width, uint32_t height, uint8_t channels)
         : Texture(nullptr, width, height, channels) {}
 
     void AssignToLocation(uint8_t n) const;
-    void CudaRegister();
-    void* CudaMap();
-    void CudaUnMap();
 
     void SetData(const char *data);
     void Bind();
@@ -38,7 +34,6 @@ private:
     uint32_t mWidth;
     uint32_t mHeight;
 
-    cudaGraphicsResource* mCudaGraphicsResource = nullptr;
 };
 
 

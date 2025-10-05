@@ -5,10 +5,10 @@
 #include <memory>
 #include "Scene.h"
 
-void Scene::Draw(const PerspectiveCamera &camera) {
+void Scene::Draw() const {
     for (size_t i = 0; i < mSceneShaders.size(); i++) {
         for (auto &object :mSceneObjects[i]) {
-            object->Draw(camera, *mSceneShaders[i]);
+            object->Draw(_camera, *mSceneShaders[i]);
         }
     }
 }
@@ -21,12 +21,16 @@ ShaderId Scene::AddShader(const std::string &vertexShaderName, const std::string
 }
 
 
-std::vector<std::vector<std::shared_ptr<Drawable>>> &Scene::GetObjects() {
-    return mSceneObjects;
+void Scene::DrawWindows() const {
+    for (auto &objects : mSceneObjects) {
+        for (auto &object : objects) {
+            object->DrawWindow();
+        }
+    }
 }
 
-std::vector<std::shared_ptr<Collider>> &Scene::GetColliderObjects() {
-    return mSceneColliderObjects;
+std::vector<std::vector<std::unique_ptr<Drawable>>> &Scene::GetObjects() {
+    return mSceneObjects;
 }
 
 

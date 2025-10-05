@@ -8,7 +8,7 @@
 #include "bvh.h"
 #include "happly/happly.h"
 #include <glm/gtc/type_ptr.hpp>
-#include "imgui_dock/imgui.h"
+#include "imgui/imgui.h"
 
 
 glm::vec3 HSBtoRGB(glm::vec3 hsb) {
@@ -47,7 +47,7 @@ glm::vec3 HSBtoRGB(glm::vec3 hsb) {
 }
 
 RayTracingCamera::RayTracingCamera(double aspect)
-        : PerspectiveCamera(aspect),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
+        : Camera(aspect),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
 {
     glGenFramebuffers(1, &mFramebufferId);
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebufferId);
@@ -62,7 +62,7 @@ RayTracingCamera::RayTracingCamera(double aspect)
 }
 
 RayTracingCamera::RayTracingCamera(uint32_t width, uint32_t height)
-        : PerspectiveCamera(width, height),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
+        : Camera(width, height),  mFramebufferTex(CAMERA_RES, CAMERA_RES, 4), mFramebufferId(0)
 {
     glGenFramebuffers(1, &mFramebufferId);
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebufferId);
@@ -76,7 +76,7 @@ RayTracingCamera::RayTracingCamera(uint32_t width, uint32_t height)
 
 }
 
-void RayTracingCamera::DrawScene(const PerspectiveCamera& camera) {
+void RayTracingCamera::DrawScene(const Camera& camera) {
 
     mShader.use();
     if (mRtMesh) {
@@ -199,12 +199,12 @@ void RayTracingCamera::ResetAccumulation() {
 }
 
 void RayTracingCamera::translate(glm::vec3 t) {
-    PerspectiveCamera::translate(t*glm::vec3(-1, 1, 1));
+    Camera::translate(t*glm::vec3(-1, 1, 1));
     ResetAccumulation();
 }
 
 void RayTracingCamera::rotate(double dPitch, double dYaw) {
-    PerspectiveCamera::rotate(dPitch, -dYaw);
+    Camera::rotate(dPitch, -dYaw);
     ResetAccumulation();
 }
 

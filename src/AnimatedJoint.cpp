@@ -5,7 +5,7 @@
 #include <fstream>
 #include "AnimatedJoint.h"
 
-void AnimatedJoint::Draw(const PerspectiveCamera &camera, Shader &shader) {
+void AnimatedJoint::Draw(const Camera &camera, Shader &shader) {
     mArrowX.Draw(camera, shader);
     mArrowY.Draw(camera, shader);
     mArrowZ.Draw(camera, shader);

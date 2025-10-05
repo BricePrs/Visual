@@ -6,12 +6,11 @@
 #define VISUAL_MESH_H
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <Shader.h>
-#include <PerspectiveCamera.h>
+#include <Camera.h>
 #include <iostream>
 #include <memory>
 #include <unordered_set>
@@ -74,13 +73,13 @@ public:
 
 
     static bool GetHovered(int32_t x, int32_t y, InteractiveObject* &hoveredObject);
-    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
+    void Draw(const Camera &camera, Shader &shader) override;
 
     virtual void OnHover() {};
     virtual void OnHoverQuit() {};
     virtual void OnClick() {};
     virtual void OnActionStart(int32_t x, int32_t y) {};
-    virtual void OnActionMove(Scene &world, const PerspectiveCamera &camera, double x, double y, double dx, double dy) {};
+    virtual void OnActionMove(Scene &world, const Camera &camera, double x, double y, double dx, double dy) {};
 
     virtual bool HasAction() { return false; };
 
@@ -106,7 +105,7 @@ public:
     Mesh() : Mesh(std::vector<TVertex>(), std::vector<uint32_t>(), false) {}
     ~Mesh();
 
-    void Draw(const PerspectiveCamera &camera, Shader &meshShader) override;
+    void Draw(const Camera &camera, Shader &meshShader) override;
 
     void ChangeVertices(std::vector<TVertex> &vertices);
     void ChangeIndices(std::vector<uint32_t> &indices);
@@ -243,7 +242,7 @@ public:
 
     GraphGrid(uint16_t resolution, double scale);
 
-    void Draw(const PerspectiveCamera &camera, Shader &shader);
+    void Draw(const Camera &camera, Shader &shader);
 
 private:
     Mesh<SimpleColorVertex> mReferentialLines;
@@ -255,7 +254,7 @@ public:
 
     WireframeBox(glm::vec3 center, glm::vec3 sides, glm::vec3 color, glm::vec3 minBound = glm::vec3(-1.), glm::vec3 maxBound = glm::vec3(1.));
 
-    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
+    void Draw(const Camera &camera, Shader &shader) override;
     void UpdateBox(glm::vec3 center, glm::vec3 sides);
 
     glm::vec3 &GetCenter() {

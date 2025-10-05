@@ -13,23 +13,6 @@
 
 
 
-#define CUDA_CHECK_ERROR(err) \
-    {                         \
-        bool fail = false; \
-        do { \
-            cudaError_t cudaErr = err; \
-            if (cudaErr != cudaSuccess) { \
-                fail = true;      \
-                fprintf(stderr, "CUDA error in %s at line %d: %s (%d)\n", \
-                        __FILE__, __LINE__, cudaGetErrorString(cudaErr), cudaErr); \
-            } \
-        } while (0);               \
-        if (fail) { \
-            exit(EXIT_FAILURE);   \
-        }                         \
-    }
-
-
 template<>
 Mesh<SimpleVertex> Mesh<SimpleVertex>::LoadFromPLY(const std::string &fileName, float scale) {
     auto parsedData = happly::PLYData(fileName);
@@ -112,7 +95,6 @@ Mesh<TVertex>::Mesh(const std::vector<TVertex> &vertices, const std::vector<uint
 
     mIndicesCount = indices.size();
 
-    //CUDA_CHECK_ERROR(cudaGraphicsGLRegisterBuffer(&mCuda_vertexBuffer, mVbo, cudaGraphicsMapFlagsWriteDiscard));
 
 }
 
@@ -259,7 +241,7 @@ Mesh<SimpleColorVertex> ParseOFF(std::string fileName) {
 
 
 template <class TVertex>
-void Mesh<TVertex>::Draw(const PerspectiveCamera &camera, Shader &shader) {
+void Mesh<TVertex>::Draw(const Camera &camera, Shader &shader) {
 
     Shader meshShader = MESH_SHADER.value();
     meshShader.use();
@@ -513,7 +495,7 @@ GraphGrid::GraphGrid(uint16_t resolution, double scale) {
     mReferentialLines.SetPrimitiveMode(GL_LINES);
 }
 
-void GraphGrid::Draw(const PerspectiveCamera &camera, Shader& shader) {
+void GraphGrid::Draw(const Camera &camera, Shader& shader) {
     mScaleGrid.Draw(camera, shader);
     mReferentialLines.Draw(camera, shader);
 }
@@ -536,7 +518,7 @@ bool InteractiveObject::GetHovered(int32_t x, int32_t y, InteractiveObject* &hov
     return true;
 }
 
-void InteractiveObject::Draw(const PerspectiveCamera &camera, Shader& shader) { // TODO : shader not required
+void InteractiveObject::Draw(const Camera &camera, Shader& shader) { // TODO : shader not required
     glEnable(GL_STENCIL_TEST);
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, mId, 0xFF);
@@ -582,7 +564,7 @@ std::vector<uint32_t> WireframeBox::BuildMeshIndices() {
     };
 }
 
-void WireframeBox::Draw(const PerspectiveCamera &camera, Shader& shader) {
+void WireframeBox::Draw(const Camera &camera, Shader& shader) {
     mMesh.Draw(camera, shader);
 }
 

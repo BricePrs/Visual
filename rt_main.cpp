@@ -11,13 +11,12 @@
 #include "InputManager.h"
 #include "Grid.h"
 #include "RayTracingCamera.h"
-#include "imgui_dock/imgui.h"
-#include "imgui_dock/imgui_impl_glfw.h"
-#include "imgui_dock/imgui_impl_opengl3.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
-#include <main.cuh>
 #include <glm/gtc/type_ptr.hpp>
 
 
@@ -45,27 +44,34 @@ int main() {
     glfwSwapInterval(0);
 
 
-    auto arrowx = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(1., 0., 0.)*0.6f, glm::vec3(1., 0., 0.));
-    auto arrowy = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 1., 0.)*0.6f, glm::vec3(0., 1., 0.));
-    auto arrowz = IArrow3D(glm::vec3(0., 2., 4.), glm::vec3(0., 0., 1.)*0.6f, glm::vec3(0., 0., 1.));
-
-    Quad quad = Quad();
     RayTracingCamera* rtCam = new RayTracingCamera(2048, 2048);
     rtCam->translate({0., 0., -4.});
-    quad.SetTexture(rtCam->GetTexture());
+    quad->SetTexture(rtCam->GetTexture());
 
-    quad.Translate({0., 0., 1.});
-    quad.SetScale(glm::vec3(20.f));
+    quad->Translate({0., 0., 1.});
+    quad->SetScale(glm::vec3(20.f));
 
     Scene world;
-    world.AddObject(&arrowx);
-    world.AddObject(&arrowy);
-    world.AddObject(&arrowz);
-    world.AddObject(&quad);
 
-    //rtCam->SetMesh(nullptr);
-    rtCam->SetMesh("models/teapot_wt.ply");
-    auto displayCamera = new PerspectiveCamera(ASPECT);
+    auto defaultShader          = world.AddShader("default.vsh", "default.fsh");
+    auto defaultColorShader     = world.AddShader("defaultVertexColor.vsh", "defaultVertexColor.fsh");
+    auto defaultTextureShader   = world.AddShader("default_texture.vsh", "default_texture.fsh");
+    auto defaultNormalShader    = world.AddShader("defaultVertexNormal.vsh", "defaultVertexNormal.fsh");
+
+    Mesh<SimpleVertex>::MESH_SHADER         = std::make_optional(world.GetShader(defaultShader));
+    Mesh<SimpleColorVertex>::MESH_SHADER    = std::make_optional(world.GetShader(defaultColorShader));
+    Mesh<SimpleNormalVertex>::MESH_SHADER   = std::make_optional(world.GetShader(defaultNormalShader));
+    Mesh<SimpleUvVertex>::MESH_SHADER       = std::make_optional(world.GetShader(defaultTextureShader));
+
+
+    world.AddObject(arrowx, defaultColorShader);
+    world.AddObject(arrowy, defaultColorShader);
+    world.AddObject(arrowz, defaultColorShader);
+    world.AddObject(quad, defaultColorShader);
+
+    rtCam->SetMesh(nullptr);
+    //rtCam->SetMesh("models/teapot_wt.ply");
+    auto displayCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT);
     displayCamera->translate({2., 0., -6.5});
     rtCam->SetEnvMap("textures/pisa.png");
     rtCam->SetGroundTex("textures/grace-new.png");
@@ -81,6 +87,7 @@ int main() {
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
+ 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(.5, 0.1, 0.05, 1.));
@@ -100,6 +107,7 @@ int main() {
     ImGui::GetStyle().ChildRounding = 4;
     ImGui::GetStyle().GrabRounding = 4;
     ImGui::GetStyle().WindowRounding = 4;
+
 
     const char* glsl_version = "#version 430 core";
     // Setup Platform/Renderer backends

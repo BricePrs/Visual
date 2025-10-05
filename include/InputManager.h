@@ -5,10 +5,8 @@
 #ifndef VISUAL_INPUTMANAGER_H
 #define VISUAL_INPUTMANAGER_H
 
-#include <ProjectIncludes.h>
-#include <imgui_dock/imgui.h>
-#include "imgui_dock/imgui_impl_glfw.h"
-#include "imgui_dock/imgui_impl_opengl3.h"
+#include <imgui/imgui.h>
+#include "ProjectIncludes.h"
 #include "Scene.h"
 #include "Mesh.h"
 
@@ -23,10 +21,12 @@ enum InputManagerState {
 class InputManager {
 public:
 
-    InputManager(GLFWwindow* window, Scene &world, PerspectiveCamera* camera);
+    InputManager(GLFWwindow* window, Scene &world, Camera *camera);
 
-    void ProcessInputs();
-    const PerspectiveCamera &GetCamera();
+    void ProcessInputs(double deltaTime);
+
+    [[nodiscard]]
+    const Camera &GetCamera() const;
 
 private:
 
@@ -51,7 +51,7 @@ private:
     InteractiveObject *mSelectedObject;
 
     // Camera Move
-    PerspectiveCamera* mCamera;
+    Camera* mCamera;
 
     double mCursorLastX;
     double mCursorLastY;

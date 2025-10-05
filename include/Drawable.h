@@ -6,7 +6,7 @@
 #define VISUAL_DRAWABLE_H
 
 
-#include "PerspectiveCamera.h"
+#include "Camera.h"
 #include "SceneId.h"
 #include <Shader.h>
 #include <optional>
@@ -14,8 +14,10 @@
 
 class Drawable {
 public:
-    virtual void Draw(const PerspectiveCamera &camera, Shader &shader) = 0;
-    virtual std::optional<std::vector<Drawable>> GetDrawableElts() { return {}; }
+    virtual void Draw(const Camera &camera, Shader &shader) = 0;
+    virtual void DrawWindow() {} // TODO better ?
+    virtual void Update(double deltaTime) {}
+    virtual std::optional<std::vector<Drawable>> GetDrawableElts() { return {}; };
 };
 
 

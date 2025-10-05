@@ -164,7 +164,7 @@ void AnimatedMesh::Update(double dt) {
     mSkinMeshTransformed.ChangeVertices(new_vertices);
 }
 
-void AnimatedMesh::Draw(const PerspectiveCamera &camera, Shader &shader) {
+void AnimatedMesh::Draw(const Camera &camera, Shader &shader) {
     mRootJoint->Draw(camera, shader);
     glLineWidth(4.f);
     mSkeletonMesh.Draw(camera, shader);

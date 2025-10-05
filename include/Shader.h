@@ -6,7 +6,6 @@
 #define VISUAL_SHADER_H
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <memory>
 #include <string>
 #include <glm/glm.hpp>

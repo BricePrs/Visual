@@ -38,13 +38,13 @@ private:
     GLuint mNodesBuffer;
 };
 
-class RayTracingCamera : public PerspectiveCamera {
+class RayTracingCamera : public Camera {
 public:
 
     explicit RayTracingCamera(double aspect);
     RayTracingCamera(uint32_t width, uint32_t height);
 
-    void DrawScene(const PerspectiveCamera& camera);
+    void DrawScene(const Camera& camera);
 
     [[nodiscard]] Texture GetTexture() const { return mFramebufferTex; };
     void SetMesh(RayTracingMesh *mesh);

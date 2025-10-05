@@ -8,9 +8,7 @@
 
 #include <cstdint>
 #include <vector>
-#include <SoftBody.h>
 #include "Mesh.h"
-#include "Octree.h"
 
 class SignedDistanceField : public Drawable {
 public:
@@ -28,9 +26,8 @@ public:
     void InterCapsule(glm::vec3 center, glm::vec3 dir, float length, float radius);
 
     void BuildMesh();
-    std::shared_ptr<SoftBody> BuildSoftbody(PhysicsParam params, SoftBody::DisplayMode displayMode);
 
-    void Draw(const PerspectiveCamera& camera, Shader& shader) override;
+    void Draw(const Camera& camera, Shader& shader) override;
 
 private:
 

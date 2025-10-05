@@ -7,9 +7,8 @@
 
 #include <glm/glm.hpp>
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "Shader.h"
-#include "PerspectiveCamera.h"
+#include "Camera.h"
 #include "Mesh.h"
 
 class DoublePendulum : public Drawable {
@@ -25,7 +24,7 @@ public:
 
     void Step();
     void Step2();
-    void Draw(const PerspectiveCamera &camera, Shader &shader);
+    void Draw(const Camera &camera, Shader &shader);
 
 private:
 

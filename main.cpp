@@ -16,31 +16,14 @@
 #include <GlobalVar.h>
 #include <ParticleSystem.h>
 #include <joint.h>
-#include <main.cuh>
+
+#include "Application.h"
 
 
 int main() {
 
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 16);
 
-    GLFWwindow *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Visual", nullptr, nullptr);
-    if (!window) {
-        glfwTerminate();
-        throw std::runtime_error("Failed to create window !");
-    }
-
-    glfwMakeContextCurrent(window);
-
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        glfwTerminate();
-        throw std::runtime_error("Failed to get proc address !");
-    }
-
-    glfwSwapInterval(0);
+    Application application = {};
 
 
     std::vector<SimpleColorVertex> vertices= {
@@ -50,13 +33,15 @@ int main() {
             {{0., 1., 0.}, {1., 0.3, .4}}};
 
     std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
-    Mesh mesh = {vertices, indices, true};
-    Mesh mesh2 = {vertices, indices, true};
-    mesh.SetScale(glm::vec3(1., 0.5, 1.));
-    mesh.SetPosition(glm::vec3(-8.3, 0., 9.8));
-    mesh2.SetPosition(glm::vec3(-8.3, 0.5, 9.8));
-    mesh2.SetScale(glm::vec3(1., .5, 1.));
-    mesh2.SetRotation(glm::vec3(3.1415/2., 0., 0.));
+    
+    auto mesh = std::make_shared<Mesh<SimpleColorVertex>>(vertices, indices, true);
+    auto mesh2 = std::make_shared<Mesh<SimpleColorVertex>>(vertices, indices, true);
+
+    mesh->SetScale(glm::vec3(1., 0.5, 1.));
+    mesh->SetPosition(glm::vec3(-8.3, 0., 9.8));
+    mesh2->SetPosition(glm::vec3(-8.3, 0.5, 9.8));
+    mesh2->SetScale(glm::vec3(1., .5, 1.));
+    mesh2->SetRotation(glm::vec3(3.1415/2., 0., 0.));
 
 
     Tube tube = {0.3, 3., 10};
@@ -69,9 +54,9 @@ int main() {
     AnimatedJoint::ARROW_SIZE = 0.15f;
 
     AnimatedMesh animatedMesh = { "bvh/walkSit.bvh", "bvh/skin.off", "bvh/weights.txt" };
-    Mesh<SimpleColorVertex> skinMesh = ParseOFF("bvh/skin.off");
-    skinMesh.SetScale(glm::vec3(0.01f));
-    skinMesh.SetDrawMode(GL_LINE);
+    auto skinMesh = std::make_shared<Mesh<SimpleColorVertex>>(ParseOFF("bvh/skin.off"));
+    skinMesh->SetScale(glm::vec3(0.01f));
+    skinMesh->SetDrawMode(GL_LINE);
 
     AnimatedJoint animatedJointRoot = AnimatedJoint("AnimatedData/PELV.txt", glm::vec3(-4., 4., 1.), "Pelv"); // X = Back Z = Up, Y = Right
     std::shared_ptr<AnimatedJoint> animatedJoint1 = animatedJointRoot.AddChildren   ("AnimatedData/UARML.txt", glm::vec3(0., -0.2, 0.6), "UArmL");
@@ -83,15 +68,29 @@ int main() {
 
 
     Scene world;
-    world.AddObject(&grid);
-    world.AddObject(&mesh);
-    world.AddObject(&mesh2);
-    world.AddObject(&animatedMesh);
+
+    auto defaultShader          = world.AddShader("default.vsh", "default.fsh");
+    auto defaultColorShader     = world.AddShader("defaultVertexColor.vsh", "defaultVertexColor.fsh");
+    auto defaultTextureShader   = world.AddShader("default_texture.vsh", "default_texture.fsh");
+    auto defaultNormalShader    = world.AddShader("defaultVertexNormal.vsh", "defaultVertexNormal.fsh");
+
+    Mesh<SimpleVertex>::MESH_SHADER         = std::make_optional(world.GetShader(defaultShader));
+    Mesh<SimpleColorVertex>::MESH_SHADER    = std::make_optional(world.GetShader(defaultColorShader));
+    Mesh<SimpleNormalVertex>::MESH_SHADER   = std::make_optional(world.GetShader(defaultNormalShader));
+    Mesh<SimpleUvVertex>::MESH_SHADER       = std::make_optional(world.GetShader(defaultTextureShader));
+
+
+    world.AddObject(std::make_shared<GraphGrid>(grid), defaultColorShader);
+    world.AddObject(mesh, defaultShader);
+    world.AddObject(mesh2, defaultShader);
+    world.AddObject(std::make_shared<AnimatedMesh>(animatedMesh), defaultShader);
     // world.AddObject(&skinMesh);
 
-    world.AddObject(&animatedJointRoot);
+    world.AddObject(std::make_shared<AnimatedJoint>(animatedJointRoot), defaultNormalShader);
 
-    InputManager inputManager(window, world);
+    Camera camera = Camera(ASPECT);
+
+    InputManager inputManager(window, world, &camera);
     while (!glfwWindowShouldClose(window)) {
         auto startFrameTime = std::chrono::high_resolution_clock::now();
         glClearColor(.08, .05, 0.05, 1.);
@@ -115,9 +114,9 @@ int main() {
         std::this_thread::sleep_until(startFrameTime+std::chrono::duration<double, std::ratio<1, 300>>(1));
     }
 
-    animatedJointRoot.ExportBVH("testExportLN.bvh");
+    application.Run();
 
-    glfwTerminate();
+
 
     return EXIT_SUCCESS;
 }

@@ -14,7 +14,7 @@ public:
     AnimatedMesh(const std::string &skeletonFileName, const std::string &skinFileName, const std::string &weightsFileName);
 
     void Update(double dt);
-    void Draw(const PerspectiveCamera &camera, Shader &shader) override;
+    void Draw(const Camera &camera, Shader &shader) override;
 
 private:
 
