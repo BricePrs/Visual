@@ -91,6 +91,8 @@ add_executable(
         ${SRC_FILES} ${HEADER_FILES}
 
         rt_main_reworked.cpp
+        ComputeGraph.cpp
+        ComputeGraph.h
 )
 
 
